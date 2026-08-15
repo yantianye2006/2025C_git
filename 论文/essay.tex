@@ -5,7 +5,7 @@
 \usepackage{amsmath,amssymb,booktabs,tabularx,graphicx}
 \usepackage{enumitem}
 \usepackage[hidelinks]{hyperref}
-\usepackage{tikz}
+\usepackage{tikz,float}
 \numberwithin{equation}{section}
 \usetikzlibrary{shapes.geometric, arrows, positioning, calc}
 
@@ -154,19 +154,146 @@
 		%正式建模	
 			\section{问题1建模}
 			\subsection{预实验与文献综述}
-			%对数据中进行简要分析，选择出主模型，结合文献给出主模型的合理性
-			\subsection{主模型建立}
-			%用数学公式表达模型
-			%指出这个模型解决了什么问题
-			\subsection{主模型求解}
-			%给出模型结果，说明求解过程采用什么算法
-			%求解的参数如何进行优化
-			\subsection{误差分析与稳健性检验}
-			%说明误差结构来源
-			%对参数进行稳健性分析
+			\subsubsection{预实验设计}
+			Y染色体浓度是取值于$(0,1)$的比例变量，其随孕周和BMI的变化既可能呈现阈值、饱和等非线性，也可能受测序质量、GC含量及异常读段记录的影响；同时，同一孕妇的多次检测和技术复测会引入显著的组内相关。若直接对1082条记录作普通回归，不仅可能将个体间差异误判为随孕周的纵向变化，也会高估模型的泛化能力。因此，预实验围绕``是否需要非线性结构、是否应重构目标尺度或加入质量信息、以及是否必须显式处理重复测量''三个不确定因素展开。
+
+			从267名孕妇中预先留出53名作为锁定测试集，其余214名孕妇构成开发集；开发集内进行5折、以孕妇为分组单位的交叉验证，保证同一孕妇的全部记录及复测不跨折。模型选择阶段不读取锁定测试集指标。以原始Y浓度尺度上的\textbf{孕妇等权MAE}为主指标，并同时报告孕妇等权RMSE、记录级RMSE、$R^2$、最差折误差及训练--验证差距；其中，孕妇等权聚合避免检测次数较多的孕妇主导评价。
+
+			\subsubsection{基线与升级规则}
+			表\ref{tab:q1_baseline}按模型容量、结构假设和比较目的重排了全部预实验基线；复测组中位数口径在所有模型上同步复算，作为技术复测敏感性检验。
+
+			\begin{table}[H]
+			\centering
+			\scriptsize
+			\renewcommand{\arraystretch}{1.18}
+			\setlength{\tabcolsep}{3pt}
+			\caption{问题1预实验的基线矩阵与升级判据}
+			\label{tab:q1_baseline}
+			\begin{tabularx}{\textwidth}{@{}>{\centering\arraybackslash}p{0.075\textwidth}p{0.22\textwidth}X>{\raggedright\arraybackslash}p{0.245\textwidth}@{}}
+			\toprule
+			编号 & 模型结构 & 诊断目的 & 升级或保留条件 \\
+			\midrule
+			P0 & 训练折Y浓度均值 & 无信息基线，检验协变量是否提供稳定增益 & 作为所有候选的共同参照 \\
+			P1 & 孕周、BMI及交互项的普通线性回归 & 检验低阶线性关系 & 相对P0的MAE改善至少3\% \\
+			P2 & P1+收缩孕妇截距 & 检验重复测量的个体相关 & ICC$\geq0.10$时保留聚类/层级推断 \\
+			P3 & P2+4结点三次样条 & 检验平滑非线性 & 相对P2的MAE改善至少5\% \\
+			P4 & P2+21周固定节点分段 & 检验阶段性斜率变化 & 相对P2的MAE改善至少5\% \\
+			P5 & P3在log、logit尺度重拟合 & 检验比例目标的尺度重构 & 反变换后相对原尺度P3改善至少3\% \\
+			P6 & P3+年龄、质量、GC及冲突标记 & 检验可得检测信息的增益 & 相对P3的MAE改善至少3\% \\
+			\bottomrule
+			\end{tabularx}
+			\end{table}
+
+			除表中相对误差阈值外，任一升级模型还须在至少4个验证折胜出、最差折误差不恶化超过5\%，且训练--验证差距不比对照扩大10个百分点以上；质量信息和尺度变换均须达到稳定增益。个体相关达到阈值时，正式关系推断保留孕妇聚类或层级结构，而不以新孕妇预测误差作为唯一裁决依据。
+
+			\subsubsection{结果与评价}
+			对于同一对象的多时点连续观测，纵向统计通常不将各记录视为独立样本，而以广义估计方程或混合模型刻画组内相关，并用稳健方差进行总体效应推断\citeup{6}。当个体未观测特征可能与协变量相关时，Mundlak分解将协变量写为个体均值和个体内偏离，从而分别辨识组内变化与组间差异\citeup{5}。这一成熟思路为下一节的主模型结构提供了依据。
+
+			表\ref{tab:q1_pilot}给出全记录口径下的主要结果：所有扩展方案相对均值基线的最佳MAE改善仅为2.28\%，未达到3\%的实质增益线；非线性、分段、尺度变换和质量信息均未满足相应升级条件。重复测量的ICC为0.658，且复测组中位数口径下主要效应方向一致，表明相关结构需要保留，而复杂固定效应不应进入主模型。
+
+			\begin{table}[H]
+			\centering
+			\scriptsize
+			\renewcommand{\arraystretch}{1.12}
+			\setlength{\tabcolsep}{2pt}
+			\caption{问题1预实验的5折孕妇级交叉验证结果（开发集）}
+			\label{tab:q1_pilot}
+			\begin{tabular}{@{}p{0.19\textwidth}>{\centering\arraybackslash}p{0.15\textwidth}>{\centering\arraybackslash}p{0.15\textwidth}>{\centering\arraybackslash}p{0.15\textwidth}p{0.32\textwidth}@{}}
+			\toprule
+			模型 & 孕妇等权MAE & 孕妇等权RMSE & 相对对照改善 & 裁决 \\
+			\midrule
+			P0：均值基线 & 0.026747 & 0.029581 & -- & 无信息对照 \\
+			P1：线性回归 & 0.026406 & 0.028854 & 相对P0：1.27\% & 未达到3\%增益线 \\
+			P2：线性+孕妇截距 & 0.027291 & 0.029364 & 相对P1：-3.35\% & ICC=0.658，保留聚类结构 \\
+			P3：样条+孕妇截距 & 0.026254 & 0.028448 & 相对P2：3.80\% & 5/5折胜出，但未达到5\%非线性升级线 \\
+			P4：21周分段 & 0.027072 & 0.029200 & 相对P2：0.80\% & 不升级 \\
+			P5：最佳尺度变换（logit） & 0.026898 & 0.029157 & 相对P3：-2.46\% & 不升级 \\
+			P6：样条+质量信息 & 0.026137 & 0.028381 & 相对P3：0.44\% & 区间跨0，不升级 \\
+			\bottomrule
+			\end{tabular}
+			\end{table}
+
+			\subsubsection{主模型结果}
+			预实验最终选择低容量的Mundlak组内/组间线性关系模型，并采用以孕妇为聚类单元的稳健协方差进行推断；样条、质量变量和复测聚合仅保留为敏感性分析。该模型将同一孕妇内的变化与孕妇间的稳定差异分开：在开发集中，个体内孕周每增加1周，Y浓度平均增加0.003203（95\% CI：$[0.002612,0.003794]$，Holm校正$p<0.001$）；孕妇间平均BMI每增加$1\,\mathrm{kg/m^2}$，Y浓度平均降低0.001819（95\% CI：$[-0.003303,-0.000336]$，Holm校正$p=0.0495$）。个体内BMI效应及孕周$\times$BMI交互均不显著。因而，问题1的重点应是解释总体关系及其不确定性，而非宣称对新孕妇具有高精度预测能力。
+			\subsection{主模型建立与求解}
+			\subsubsection{主模型表达}
+			设$y_{ij}$为第$i$名孕妇在第$j$次检测时的Y染色体浓度，$t_{ij}$和$b_{ij}$分别为连续孕周和BMI。为避免把孕妇间差异误判为同一孕妇随孕周的变化，先将协变量分解为个体内偏离与个体间均值差：
+			\begin{equation}
+			\begin{aligned}
+			t^{\mathrm W}_{ij}&=t_{ij}-\bar t_i, &
+			t^{\mathrm B}_{i}&=\bar t_i-\bar t,\\
+			b^{\mathrm W}_{ij}&=b_{ij}-\bar b_i, &
+			b^{\mathrm B}_{i}&=\bar b_i-\bar b,
+			\end{aligned}
+			\label{eq:q1_mundlak_decompose}
+			\end{equation}
+			其中横线表示相应孕妇内或开发集总体均值。主模型写为
+			\begin{equation}
+			y_{ij}=\beta_0+\beta_1t^{\mathrm W}_{ij}+\beta_2t^{\mathrm B}_{i}
+			+\beta_3b^{\mathrm W}_{ij}+\beta_4b^{\mathrm B}_{i}
+			+\beta_5t^{\mathrm W}_{ij}b^{\mathrm B}_{i}+\varepsilon_{ij}.
+			\label{eq:q1_mundlak_model}
+			\end{equation}
+			式\eqref{eq:q1_mundlak_model}不是为新孕妇输出精确浓度，而是回答两个可检验的问题：同一孕妇孕周变化时$y$如何变化，以及不同BMI孕妇之间的平均差异是否稳定。交互项按预实验方案保留，用于检验BMI是否改变个体内孕周斜率；质量、GC和高容量非线性项只用于敏感性比较，不进入主规格。
+			\subsubsection{主模型求解}
+			在214名开发集孕妇的868条记录上，以普通最小二乘估计$\boldsymbol\beta$，但不将记录级残差视为独立。令$\boldsymbol X_i$和$\widehat{\boldsymbol e}_i$分别为孕妇$i$的设计矩阵和残差向量，则采用以孕妇为聚类单元、带有限样本修正的sandwich协方差：
+			\begin{equation}
+			\widehat{\mathrm{Var}}(\widehat{\boldsymbol\beta})
+			=\frac{G}{G-1}\frac{n-1}{n-p}
+			(\boldsymbol X^\top\boldsymbol X)^{-1}
+			\left(\sum_{i=1}^{G}\boldsymbol X_i^\top\widehat{\boldsymbol e}_i
+			\widehat{\boldsymbol e}_i^\top\boldsymbol X_i\right)
+			(\boldsymbol X^\top\boldsymbol X)^{-1},
+			\label{eq:q1_cluster_cov}
+			\end{equation}
+			其中$G=214$，$n=868$，$p=6$。对五个核心效应的$p$值作Holm校正。表\ref{tab:q1_main}显示，个体内孕周效应显著为正，而个体间孕周效应显著为负；两者不能合并为一个``孕周效应''。个体间BMI效应为负，但个体内BMI效应和交互项均未获得显著证据。
+
+			\begin{table}[H]
+			\centering
+			\scriptsize
+			\renewcommand{\arraystretch}{1.12}
+			\caption{问题1核心Mundlak模型的开发集估计结果}
+			\label{tab:q1_main}
+			\begin{tabular}{lrrrr}
+			\toprule
+			效应项 & 估计值 & 聚类稳健标准误 & 95\%置信区间 & Holm校正$p$值 \\
+			\midrule
+			个体内孕周$t^{\mathrm W}$ & 0.003203 & 0.000300 & $[0.002612,0.003794]$ & $<0.001$ \\
+			个体间孕周$t^{\mathrm B}$ & -0.003879 & 0.000882 & $[-0.005619,-0.002140]$ & $<0.001$ \\
+			个体内BMI$b^{\mathrm W}$ & -0.000262 & 0.001045 & $[-0.002322,0.001799]$ & 1.000 \\
+			个体间BMI$b^{\mathrm B}$ & -0.001819 & 0.000753 & $[-0.003303,-0.000336]$ & 0.049 \\
+			$t^{\mathrm W}\times b^{\mathrm B}$ & 0.000015 & 0.000087 & $[-0.000157,0.000187]$ & 1.000 \\
+			\bottomrule
+			\end{tabular}
+			\end{table}
+
+			模型冻结后，在53名锁定测试孕妇的214条记录上作一次外部评估。开发集和测试集的孕妇等权MAE分别为0.023423和0.023463，孕妇等权RMSE分别为0.025671和0.025745；三个可检验的核心方向（个体内孕周为正、个体间孕周为负、个体间BMI为负）在测试队列独立重估后保持一致。该检验支持关系方向的可复现性，但并不改变模型的解释性定位。
+			
+			\subsection{误差分析与方向转变}
+			主模型在开发集和锁定测试集的记录级$R^2$分别为0.201和0.253，$R^2$确实很低，但这并非是由于线性形式选择错误造成的。在6.1节的预实验中，样条、21周分段、log/logit变换及质量扩展在孕妇级交叉验证中均未达到预设升级条件，最佳方案相对均值基线的MAE改善也只有2.28\%。这说明仅凭孕周、BMI及现有质量字段，未被解释的波动并非可由继续增加函数自由度稳定捕获。若为了提高样本内$R^2$继续堆叠变量或结点，只会把少量孕妇的轨迹和技术噪声拟合成表面规律。
+
+			误差的首要来源是强烈且不可直接观测的个体基线差异。重复测量的ICC为0.658，意味着同一孕妇的检测结果比不同孕妇之间更相似；遗传背景、胎盘生物学状态及未记录的检测条件都会以该基线差异的形式进入残差。由于新孕妇在首检时没有自身历史Y浓度，随机截距即使能提高同一孕妇的回顾性拟合，也不能转化为对新孕妇的可用预测增益。这正是P2在新孕妇分组验证中未优于普通线性基线的原因，而不是应把随机截距当作提高泛化能力的工具。
+
+			第二类误差来自技术复测与质量信息的不完全可观测性。复测组中位数口径下核心效应方向未反转，说明技术复测并未制造主结论；但质量扩展相对无质量样条仅改善0.44\%，且bootstrap区间跨过零。低GC、读段关系冲突、比对率和过滤率等字段只能记录部分技术过程，不能替代未记录的平台批次、样本处理及生物学波动。因此，质量变量适合作为稳健性边界，而不足以支撑把残差解释为可消除的测量误差。
+
+			第三个、也最容易导致错误叙述的来源是组内与组间效应的方向转变：同一孕妇随孕周增加时，$y$平均上升；但平均检测孕周更晚的孕妇群体，其平均$y$反而更低。后一个负系数不是“孕周越大Y浓度越低”的生物学结论，而是不同孕妇的BMI、首检时点、未观测个体基线及就诊路径共同混入横截面比较后的结果。若忽略式\eqref{eq:q1_mundlak_decompose}，把全部记录合并回归，便会把这种组间混杂错写成纵向规律。另有5条锁定测试记录的孕周或BMI落在开发集范围之外，故边界处的线性外推同样不应成为结论依据。
+
+			因此，在误差分析后，真正的目标不是把每名孕妇的$y_{ij}$预测到很高精度，而是建立后续决策可用的结构约束：孕周具有可复现的个体内正向关联，BMI相关差异主要出现在孕妇之间，且个体重复检测不能当作独立证据。后续模型应把评价对象从连续浓度的$R^2$转为BMI分组下$Y\geq4\%$的达标概率、潜在风险和推荐时点的稳定性。
+			
 			\subsection{第一问结论}
-			%总结上文，给出那些及结论可以保留并参与后续建模。你哪些结论因为什么原因应当慎重考虑
-			%注意正面回应题目的要求，如果题目要求形成可以参考的表格或者分界点应明确用表格给出（短表直接写，长表放到appendix_data目录）
+			问题1给出的关系模型和显著性检验可以支持以下结论：
+			\begin{enumerate}[leftmargin=2em,itemsep=2pt]
+			\item 同一孕妇内，孕周每增加1周，Y浓度平均增加约0.003203，且该方向在锁定测试队列中得到复现；
+			\item 孕妇间的平均BMI与Y浓度呈稳定负相关，但这一结果描述的是群体间差异；
+			\item 重复测量相关性很强，后续分析必须以孕妇而非检测记录作为独立划分与不确定性评估单位；
+			\item 现有证据不支持将21周设为统一转折点，也不支持把高自由度非线性、目标尺度变换或质量扩展升级为主模型。
+			\end{enumerate}
+
+			同时，以下推论必须禁止外推：不能将个体间BMI负相关解释为“孕期减重必然提高Y浓度”；不能将组间孕周负系数解释为个体内随孕周下降；不能据本模型为新孕妇报出高精度Y浓度或精确达标周；也不能把结论直接推广到开发集范围外的孕周、BMI、检测平台或地区。$R^2$约为0.2只说明固定协变量解释的记录级波动有限，并不否定经过聚类稳健推断后得到的关系方向；但它足以否定把该模型解释为个体预测器。
+
+			据此分析，问题二接收的不是问题1的全样本拟合值，而是三项约束：一是以$Y\geq0.04$作为达标定义；二是按孕妇内检测序列构造左删失、区间删失和右删失的首次达标信息，不能把首次阳性当作真实达标时点；三是在BMI分组内比较达标概率与潜在风险，而非按单条浓度预测安排检测。
+			
+			
 			
 			\section{结论}
 			%文章主结论，最后正面回应题目要求
@@ -194,6 +321,8 @@
 		\item AMERICAN COLLEGE OF OBSTETRICIANS AND GYNECOLOGISTS, AMERICAN INSTITUTE OF ULTRASOUND IN MEDICINE, SOCIETY FOR MATERNAL-FETAL MEDICINE. Methods for Estimating the Due Date: Committee Opinion No. 700[EB/OL]. 2017, reaffirmed 2025[2026-08-15]. https://www.acog.org/clinical/clinical-guidance/committee-opinion/articles/2017/05/methods-for-estimating-the-due-date.
 		\item TURNBULL B W. The empirical distribution function with arbitrarily grouped, censored and truncated data[J]. Journal of the Royal Statistical Society: Series B (Methodological), 1976, 38(3): 290--295. DOI:10.1111/j.2517-6161.1976.tb01597.x.
 		\item RINK B D, DUGOFF L, KULLER J A, et al. Society for Maternal-Fetal Medicine Consult Series \#74: Cell-free DNA screening for aneuploidies: Updated guidance[J/OL]. Pregnancy, 2025, 1: e70139[2026-08-15]. DOI:10.1002/pmf2.70139.
+		\item MUNDLAK Y. On the pooling of time series and cross section data[J]. Econometrica, 1978, 46(1): 69--85. DOI:10.2307/1913646.
+		\item LIANG K Y, ZEGER S L. Longitudinal data analysis using generalized linear models[J]. Biometrika, 1986, 73(1): 13--22. DOI:10.1093/biomet/73.1.13.
 	\end{enumerate}
 	\end{spacing}
 	
