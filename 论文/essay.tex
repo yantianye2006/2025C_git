@@ -1,0 +1,219 @@
+\documentclass[12pt,a4paper]{ctexrep}
+
+% --- 宏包 ---
+\usepackage{geometry,setspace,titlesec,fancyhdr}
+\usepackage{amsmath,amssymb,booktabs,tabularx,graphicx}
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
+\usepackage{tikz}
+\numberwithin{equation}{section}
+\usetikzlibrary{shapes.geometric, arrows, positioning, calc}
+
+% --- 页面边距与布局 ---
+\geometry{top=2.5cm,bottom=2.54cm,left=2.5cm,right=2.5cm}
+
+% --- 字体设置 ---
+\setCJKmainfont{SimSun}
+\setCJKsansfont{SimHei}
+\setmainfont{Times New Roman}
+\newcommand{\song}{\songti}
+\newcommand{\hei}{\heiti}
+
+% --- 段落与页眉页脚 ---
+\setlength{\parskip}{0pt}
+% --- 页眉页脚设置 ---
+\pagestyle{fancy}
+\fancyhf{}
+\cfoot{\song\footnotesize\thepage}
+\renewcommand{\headrulewidth}{0pt}
+
+
+% --- 重新定制标题格式 ---
+\titleformat{\section}[block]{\hei\zihao{-3}}{\thesection}{1em}{}
+\titlespacing{\section}{0pt}{8pt}{8pt}
+
+\titleformat{\subsection}[block]{\hei\zihao{4}}{\thesubsection}{1em}{}
+\titlespacing{\subsection}{0pt}{5pt}{5pt}
+
+\titleformat{\subsubsection}[block]{\hei\zihao{4}}{\thesubsubsection}{1em}{}
+\titlespacing{\subsubsection}{0pt}{5pt}{5pt}
+
+\renewcommand{\thesection}{\arabic{section}}
+\renewcommand{\thesubsection}{\thesection.\arabic{subsection}}
+\renewcommand{\thesubsubsection}{\thesubsection.\arabic{subsubsection}}
+\setcounter{secnumdepth}{3}
+
+% --- 引用符号定制（上标、带中括号） ---
+\newcommand{\citeup}[1]{\textsuperscript{[#1]}}
+
+
+\begin{document}
+	% 前置部分：中文摘要 
+	\newpage
+	\pagenumbering{arabic} % 设置阿拉伯数字页码
+	
+	% --- 1. 中文摘要 ---
+	\begin{center}
+		{\hei\zihao{2}标题}
+	\end{center}
+	\noindent{\hei\zihao{-3}摘要}\par
+	\vspace{11pt}
+	
+	\begin{spacing}{1.0}
+		{\song\zihao{4} \setlength{\parindent}{2em}
+			中文摘要
+		}
+	\end{spacing}
+	
+	\vspace{1em}
+	\noindent{\hei\zihao{4}关键词：1；2；3；4}
+	
+	% 正文部分
+	\begin{spacing}{1.10}
+		{\song\zihao{-4}
+		%引言部分
+			\section{问题背景}
+			%简要概括这个研究目标的重要性
+			\subsection{问题重述}
+			%简要概括问题的具体是什么，转化数学建模目标
+			
+			\section{问题分析}
+			%承接上文的建模目标，分析这种情况不应该只考虑那种模型，还应引入什么
+			%在此处插入主流程图
+			
+			\section{问题假设}
+			%问题的重要假设，支持后续建模
+			
+			\section{符号即标准说明}
+			%文章中的重要符号
+			
+		%建模准备工作
+			\newpage
+			\section{数据预处理}
+			\subsection{数据总览}
+			附件含男胎、女胎各一张31字段检测表：男胎1082条记录对应267名孕妇，女胎605条记录对应147名孕妇。字段覆盖孕妇基本信息、孕周与检测日期、BMI、测序质量、染色体浓度及异常标签。前三问以男胎Y浓度、$Y\geq0.04$达标状态和首次达标区间为核心；第四问以女胎AB列非整倍体信息构造异常标签。数据的基本粒度是检测记录，但同一孕妇可有不同孕周检测或同次采血复测；同时存在缺失、结构性空白、极端观测及字段间矛盾。这些现象不能以同一规则处理，故先按其成因分层处置。
+
+			\subsection{数据理解与异常值检验}
+			\paragraph{\heiti （一）题面可直接确定的值}
+			题目已给出检测孕周J列，故末次月经日期F列的男胎12条、女胎8条缺失仅记录为缺失，不以反算结果覆盖J列。女胎第187条BMI缺失，但身高162 cm、体重95 kg可唯一确定其值，按
+			$
+			\mathrm{BMI}=\frac{95}{(162/100)^2}\approx36.20\ \mathrm{kg/m^2},
+			$
+			补算，并生成\texttt{bmi\_original\_missing}（原始BMI缺失标记）。女胎U、V列的全量空白是性别导致的不适用，不作插补；AB列空白按题面定义为“未检出异常”，并生成\texttt{ab\_from\_blank}（由AB空白生成的标签标记）。这些派生字段写入清洗数据库，原始值同时保留。
+
+			\paragraph{\heiti （二）少见但可能真实的观测}
+			BMI大于40、极端读段数和按IQR规则识别出的GC离群值均处于可出现的临床或测序范围，不能仅因少见而剔除。BMI升高会影响胎儿游离DNA比例与检测失败风险，但效应依赖检测平台\citeup{1}；GC偏倚也可校正或作为协变量处理\citeup{2}。因此，主分析保留此类记录，采用稳健缩放并纳入质量协变量；另行开展排除尾部记录的敏感性分析，检验结论是否依赖少量极端样本。
+
+			\paragraph{\heiti （三）争议样本与硬冲突}
+			男胎有39个、女胎有32个同孕妇同孕周同抽血次数的复测组，分别含99条和83条记录；它们代表技术重复而非可删除的行重复，故记为同一复测组，并生成编号字段\texttt{replicate\_group\_id}（复测组编号）。男胎116名孕妇出现相邻Y浓度下降，故不预设Y浓度单调增加，也不以线性插值虚构首次达标时点；问题2、3改用左删失、区间删失和右删失结构描述达标信息\citeup{5}。日期反算孕周与J列相差超过7天的记录有男胎144条、女胎120条，另有1条男胎记录的检测日期早于末次月经；J列保留为主孕周，F、H列仅作审计\citeup{3}。对于男胎71条“唯一比对读段数大于原始读段数”的硬冲突，以及低比对率、高过滤率和低GC记录，均不篡改原值，而生成质量标记并在敏感性分析中检验其影响。没有专门的no-call（无结果）字段时，质量风险不能直接改写为临床失败标签\citeup{8,9}。
+
+			\subsection{数据统一与变换}
+			为保证四个问题使用同一套变量定义，本文对时间、单位、标签和观测粒度进行统一。检测孕周按
+			\[
+			t_{ij}=w_{ij}+\frac{d_{ij}}{7}
+			\]
+			转换为连续周，其中$w_{ij}$为整周数，$d_{ij}$为天数；同时保留原始孕周字符串。日期字段统一为ISO格式，比例型变量以0--1小数计算、展示时转换为百分数。BMI采用原始值优先、确定性重算值补缺的规则形成\texttt{bmi\_used}（建模BMI）；连续孕周、BMI和质量标记作为派生字段写入清洗数据库。
+
+			男胎Y浓度达标指示定义为
+			\[
+			A_{ij}=\mathbb{I}(y_{ij}\geq0.04),
+			\]
+			其中$y_{ij}$为第$i$名孕妇第$j$次检测的Y染色体浓度。问题2和问题3不把某条记录的首次阳性直接视为真实达标时点，而是根据个体内观测序列生成删失区间。问题4将AB非空标签折叠为“任一异常”二分类变量，同时保留T13、T18、T21及组合标签，供后续多标签敏感性分析使用。
+
+			质量字段以“原值+标记”的形式进入模型。若需对新增随机缺失变量插补，插补器、标准化器和其他数据驱动变换只在训练折内拟合，再原样应用于验证折和测试集；缺失处理须同时考虑缺失机制、分析模型和不确定性\citeup{4}。
+
+			\subsection{训练集与测试集设计}
+			本文采用{\heiti\bfseries 以孕妇为单位的嵌套验证}：外层留出从未参与方案选择的锁定测试集，内层交叉验证只用于开发集内的模型选择与调参。最终性能只在方案冻结后于外层测试集评估一次，因此报告的是面对新孕妇时的泛化表现，而非同一孕妇重复记录上的拟合成绩。
+
+			这样划分是为切断最隐蔽的信息泄露路径。同一孕妇的多次检测、技术复测及同一\texttt{replicate\_group\_id}必须整体进入同一集合；特征筛选、插补、标准化、类别权重、BMI切点、检测时点、风险权重和分类阈值也只在每个内层训练折确定。若问题2或问题3调用问题1的输出，则只传递out-of-fold（折外）预测，避免下游模型接收同一数据上的拟合值。该流程与预测模型开发和诊断判定的透明验证原则一致\citeup{6,7}。
+
+			男、女胎分别设计。问题1--3使用267名男胎孕妇，外层按约80\%/20\%划为214名开发集和53名测试集；开发集内采用5折孕妇级分组交叉验证，并兼顾BMI、记录数、观测孕周和删失类型。问题4使用147名女胎孕妇，外层按约75\%/25\%划为110名开发集和37名测试集，并按孕妇是否存在AB异常分层，使测试集保有约10--12名异常孕妇；多次检测的标签聚合规则在读取测试集前锁定，同时报告记录级与孕妇级指标。
+
+			\subsection{总结}
+			清洗工作将原始观测、确定性派生值和质量标记分开保存；SQL层的主要写入规则及其后续用途见表\ref{tab:sql_features}。至此，四问共用的变量口径、异常处置和个体级验证边界均已固定，后续模型可在同一数据基础上进行参数估计、泛化评估和敏感性分析。
+
+			\begin{table}[!htbp]
+			\centering
+			\scriptsize
+			\renewcommand{\arraystretch}{1.12}
+			\caption{清洗数据库中的主要派生字段及其建模用途}
+			\label{tab:sql_features}
+			\begin{tabular}{>{\raggedright\arraybackslash}p{0.25\textwidth}>{\raggedright\arraybackslash}p{0.31\textwidth}>{\raggedright\arraybackslash}p{0.22\textwidth}}
+			\toprule
+			SQL字段 & 写入规则 & 后续用途 \\
+			\midrule
+			\texttt{bmi\_used}、\texttt{bmi\_original\_missing} & 原始BMI优先；由身高、体重唯一补算时保留缺失来源标记 & 问题1--3的BMI分层与稳健性分析 \\
+			\texttt{gestational\_age\_weeks}（连续孕周）、\texttt{y\_pass\_4pct}（Y浓度4\%达标指示） & 孕周统一为连续周；按$Y\geq0.04$生成达标指示 & 问题1的关系建模，问题2--3的删失时点分析 \\
+			\texttt{replicate\_group\_id}、\texttt{subject\_key}（孕妇唯一编号） & 同孕妇、同孕周、同抽血次数记录归入同一复测组 & 四问的孕妇级划分与避免泄露 \\
+			质量标记字段 & 对读段关系冲突、低比对率、高过滤率和低GC单独标记，保留原值 & 质量协变量与敏感性分析 \\
+			\texttt{ab\_any}（任一异常标签）、\texttt{ab\_from\_blank} & 按题意将AB信息转为异常标签，并保留空白来源 & 问题4的异常判定与标签审计 \\
+			\bottomrule
+			\end{tabular}
+			\end{table}
+		
+		%正式建模	
+			\section{问题1建模}
+			\subsection{预实验与文献综述}
+			%对数据中进行简要分析，选择出主模型，结合文献给出主模型的合理性
+			\subsection{主模型建立}
+			%用数学公式表达模型
+			%指出这个模型解决了什么问题
+			\subsection{主模型求解}
+			%给出模型结果，说明求解过程采用什么算法
+			%求解的参数如何进行优化
+			\subsection{误差分析与稳健性检验}
+			%说明误差结构来源
+			%对参数进行稳健性分析
+			\subsection{第一问结论}
+			%总结上文，给出那些及结论可以保留并参与后续建模。你哪些结论因为什么原因应当慎重考虑
+			%注意正面回应题目的要求，如果题目要求形成可以参考的表格或者分界点应明确用表格给出（短表直接写，长表放到appendix_data目录）
+			
+			\section{结论}
+			%文章主结论，最后正面回应题目要求
+		
+		%模型评价与推广	
+			\section{模型推广与评价}
+			\subsection{模型优点}
+			%正确处理了什么问题，有什么创新行性
+			\subsection{模型局限}
+			%在什么地方上，由于什么原因，没有达到
+			\subsection{模型推广}
+			%可以参考什么，哪些应该慎重，
+		}
+	\end{spacing}
+	
+	% 参考文献部分
+	\section{参考文献}
+
+	
+	\begin{spacing}{1.25} % 1.25 倍行距
+		\zihao{5}             % 五号字
+	\sloppy
+	\begin{enumerate}[label={[\arabic*]}, leftmargin=2em, labelwidth=1.5em, labelsep=0.5em, itemsep=0pt, parsep=0pt, partopsep=0pt, topsep=0pt]		
+		\item ROLNIK D L, YONG Y, LEE T J, et al. Influence of Body Mass Index on Fetal Fraction Increase With Gestation and Cell-Free DNA Test Failure[J]. Obstetrics \& Gynecology, 2018, 132(2): 436--443. DOI:10.1097/AOG.0000000000002752.
+		\item CHEN E Z, CHIU R W K, SUN H, et al. Noninvasive prenatal diagnosis of fetal trisomy 18 and trisomy 13 by maternal plasma DNA sequencing[J]. PLoS ONE, 2011, 6(7): e21791. DOI:10.1371/journal.pone.0021791.
+		\item AMERICAN COLLEGE OF OBSTETRICIANS AND GYNECOLOGISTS, AMERICAN INSTITUTE OF ULTRASOUND IN MEDICINE, SOCIETY FOR MATERNAL-FETAL MEDICINE. Methods for Estimating the Due Date: Committee Opinion No. 700[EB/OL]. 2017, reaffirmed 2025[2026-08-15]. https://www.acog.org/clinical/clinical-guidance/committee-opinion/articles/2017/05/methods-for-estimating-the-due-date.
+		\item STERNE J A C, WHITE I R, CARLIN J B, et al. Multiple imputation for missing data in epidemiological and clinical research: potential and pitfalls[J]. BMJ, 2009, 338: b2393. DOI:10.1136/bmj.b2393.
+		\item TURNBULL B W. The empirical distribution function with arbitrarily grouped, censored and truncated data[J]. Journal of the Royal Statistical Society: Series B (Methodological), 1976, 38(3): 290--295. DOI:10.1111/j.2517-6161.1976.tb01597.x.
+		\item BOSSUYT P M, REITSMA J B, BRUNS D E, et al. STARD 2015: an updated list of essential items for reporting diagnostic accuracy studies[J]. BMJ, 2015, 351: h5527. DOI:10.1136/bmj.h5527.
+		\item COLLINS G S, REITSMA J B, ALTMAN D G, et al. Transparent reporting of a multivariable prediction model for individual prognosis or diagnosis (TRIPOD): the TRIPOD statement[J]. BMJ, 2015, 350: g7594. DOI:10.1136/bmj.g7594.
+		\item RINK B D, DUGOFF L, KULLER J A, et al. Society for Maternal-Fetal Medicine Consult Series \#74: Cell-free DNA screening for aneuploidies: Updated guidance[J/OL]. Pregnancy, 2025, 1: e70139[2026-08-15]. DOI:10.1002/pmf2.70139.
+		\item ISO 15189:2022 Medical laboratories---Requirements for quality and competence[S/OL]. Geneva: International Organization for Standardization, 2022[2026-08-15]. https://www.iso.org/standard/76677.html.
+	\end{enumerate}
+	\end{spacing}
+	
+	%附录部分
+	%创建appendix文档 
+	
+	%附录A AI使用声明 
+	%appendix_AI_declaration AI使用声明
+	
+	%附录B 重要数据集
+	%appendix_data    重要的长表数据，还有正文没有直接出现的重要数据，注意给出使用的地方
+	
+	%附录C 代码文件
+	%appendix_contents 支撑文件目录，给出文件名和用途
+	%appendix_code     代码文件
+\end{document}
+
+
