@@ -343,13 +343,70 @@
 
 			删失文献为左删失、区间删失和右删失提供了规范处理基础\citeup{3}，所以P4的负结果不否定删失建模本身。若后续获得更多早期未达标和区间事件，可用Turnbull或半参数删失模型复核；若已有首次检测浓度、母体体重和两次采血间隔，则可进一步建立个体化重抽成功概率模型\citeup{10}；在纵向观测更密集时，还可比较联合纵向--事件模型的动态检测安排\citeup{11}。这些方法需要当前数据尚未提供的事件密度或个人历史，故暂不作为本阶段主路线。
 
-			\subsubsection{路线裁决与主模型方向}
+			\subsubsection{路线决定与主模型方向}
 			预实验最终将问题二判定为信息受限的输出重构问题。当前合理方向不是继续搜索切点或堆叠非线性，而是先保留仅孕周基线，并以带收缩的低容量BMI--孕周概率模型承载分组比较、可靠区间和“不支持精细切点”的负结论。分组只用于把连续风险差异压缩成题目要求的可执行表达，不被解释为潜在人群存在真实断点；连续BMI模型保留为对照，当前Weibull AFT和连续Y反演只承担口径敏感性。
 
 			后续主模型应先回答各候选分组能否形成稳定、可区分的达标概率轨迹，再讨论检测时点。正式求解阶段只比较少量预先给定、相邻且可解释的分组方案；复杂分组若不能在孕妇级验证中形成可复现的概率或时点分离，则合并相邻组。题面给出的风险等级目前只作为后续决策层必须面对的约束，不在预实验中指定唯一损失权重，也不把Brier分数解释为临床风险。由此，预实验完成的是结构筛选和结论降级：它证明了低容量、保守输出比高容量拟合更符合当前证据，同时为新增区间事件、首次检测信息或更密集纵向数据后的方法升级保留接口。
 			
-			\subsection{主模型建立与求解}
+			\subsection{BMI分点探路}
+			\subsubsection{探路模型的目标与建立}
+			问题二要求按BMI给出分点，但问题一只能说明BMI与Y浓度存在群体间方向关联，不能给出可直接套用的阈值。分点探路的目的不是在样本中挑出Brier分数最低的一组切点，而是检验BMI是否存在足以支撑差异化检测安排的稳定信号。若信号不足，则应停止继续搜索，并把分点从“数据估计的生物学阈值”降为后续策略中的风险沟通标签。这样的处理也避免在两端样本很少时，把局部波动误写成临床分界。
+
+			探路仅使用214名开发集孕妇。技术复测先在同一孕妇、同一孕周和同一次采血内取Y浓度中位数；随后以孕妇为单位进行5折交叉验证，同一孕妇的全部观测不跨折。以$Z_{ij}=\mathbb{I}(y_{ij}\geq0.04)$表示第$i$名孕妇第$j$次观测是否达标，并以孕妇等权Brier分数评价折外概率。为避免自由搜索切点，预先固定候选集合
+			\[
+			\mathcal{C}=\{\varnothing,\{32\},\{32,36\},\{28,32,36,40\}\}.
+			\]
+			其中$\varnothing$表示不分组，后三种方案依次为两组、三组和题面五组。边界按左闭右开处理，例如BMI$=32$归入$[32,36)$。开发集中的组人数依次为：两组$113/101$，三组$113/83/18$，题面五组$5/108/83/15/3$。这组候选同时覆盖了“不分组”“合并相邻组”和“保留题面细分”三种解释，却没有把每一个样本BMI都当成候选断点。
+
+			对任一候选分区$G$，以有序收缩Logistic模型估计达标概率：
+			\begin{equation}
+			\operatorname{logit}\{p_{ij}\}=\alpha+\beta\frac{t_{ij}-17.5}{5}
+			-\sum_{k=2}^{g(i)}\delta_k,\qquad
+			\beta\geq0,\ \delta_k\geq0.
+			\label{eq:q2_bmi_probe}
+			\end{equation}
+			这里$p_{ij}=P(Z_{ij}=1\mid t_{ij},g(i))$，$g(i)$为孕妇$i$所属BMI组。$\beta\geq0$限制达标概率不随孕周系统下降，$\delta_k\geq0$限制更高BMI组不被拟合为系统性更易达标；当数据不支持组间差异时，惩罚项会将$\delta_k$收缩到零。每个分区在$\lambda\in\{0,10^{-4},10^{-3},10^{-2},10^{-1},1,10,100\}$上比较。先在分区内部保留Brier分数落在该分区最优值一个标准误以内、且收缩最强的$\lambda$；再在不同分区之间重复同一规则，并优先选择组数较少的方案。该规则在观察结果前确定，锁定测试集不参与分点或$\lambda$的选择。
+
+			\begin{figure}[H]
+			\centering
+			\fbox{\parbox{0.91\textwidth}{\centering
+			\vspace{0.8em}
+			\heiti BMI分点探路图（预留）\\[0.35em]
+			\song\small
+			正式图从左到右呈现：开发集BMI分布及$28,32,36,40$候选边界；四种候选分区与组人数；各分区在one-SE规则下的折外Brier分数及500次孕妇bootstrap入选频率；最后以箭头标出“稳定分点信号不足$\rightarrow$粗分层下的检测--重检策略优化”。图中须注明：五组两端样本仅为5人与3人，单组在bootstrap中入选500/500次；所有数值仅来自214名开发集孕妇。\vspace{0.8em}}}
+			\caption{BMI分点探路的候选结构与裁决证据。候选切点在分析前固定，不对连续BMI进行穷举搜索；每种分区均在相同的孕妇级5折划分上比较。正式图将同时给出性能差异和选择稳定性，以说明“未保留三分组”来自证据不足，而非未比较分组方案。}
+			\label{fig:q2_bmi_probe}
+			\end{figure}
+
+			\subsubsection{结果讨论与方向确定}
+			表\ref{tab:q2_bmi_cut_probe}汇总了分点探路的最终比较。三分组在不收缩时的平均Brier分数最低，为0.112985；但其5折标准误为0.004424，与单组模型的差异小于该不确定性范围。按照预先规定的one-SE规则，四种分区均可采用$\lambda=100$的强收缩规格；此时三分组和五分组的Brier分数分别为0.115916和0.115916，单组为0.115981，最大差距仅0.000065。换言之，较细分区的表面优势依赖较弱收缩，在折外不确定性下不能证明为稳定增益。
+
+			\begin{table}[H]
+			\centering
+			\footnotesize
+			\renewcommand{\arraystretch}{1.16}
+			\setlength{\tabcolsep}{3pt}
+			\caption{BMI分点探路的候选分区比较（开发集孕妇级5折验证）}
+			\label{tab:q2_bmi_cut_probe}
+			\begin{tabularx}{\textwidth}{@{}p{0.18\textwidth}X>{\centering\arraybackslash}p{0.16\textwidth}>{\centering\arraybackslash}p{0.12\textwidth}>{\centering\arraybackslash}p{0.14\textwidth}X@{}}
+			\toprule
+			候选分区 & 切点与组人数 & 分区内one-SE $\lambda$ & Brier分数 & Brier标准误 & 跨分区裁决 \\
+			\midrule
+			单组 & 全体（214） & 100 & 0.115981 & 0.005824 & \textbf{保留} \\
+			两组 & $32$；$113/101$ & 100 & 0.115963 & 0.005811 & 位于one-SE范围内，组数更多 \\
+			三组 & $32,36$；$113/83/18$ & 100 & 0.115916 & 0.005801 & 位于one-SE范围内，组数更多 \\
+			题面五组 & $28,32,36,40$；$5/108/83/15/3$ & 100 & 0.115916 & 0.005801 & 位于one-SE范围内，尾部样本过少 \\
+			\bottomrule
+			\end{tabularx}
+			\end{table}
+
+			三分组没有被保留，原因并不只是单组更简单，而是出于如下考虑。首先，在先前的直接概率探针中，题面五组P1相对仅孕周P0的Brier改善为$1.60\%$，低于预设的$3\%$门槛，且只在3个验证折中胜出；连续BMI和样条也未提供稳定补充证据。其次，三分组的最高BMI组只有18名孕妇，时点估计容易受少数轨迹影响。同时，500次按孕妇bootstrap并以袋外样本复现选择流程后，单组被选中500次。故本文的结论是“当前数据不能识别需要差异化安排的稳定BMI数据分点”，而不是“BMI与达标概率没有关系”。
+
+			这一结论与已有研究和临床一线的看法一致。临床队列普遍观察到胎儿游离DNA比例随孕周上升、随母体体重或BMI升高而下降，但效应大小受人群和检测平台影响，不能把某个样本切点直接移植为统一检测周\citeup{1,7}。统计方法学也提醒，将连续变量任意分组会丢失信息，并使结果随边界移动而变化\citeup{8,9}。更贴近临床决策的是：体重或BMI可用于首次检测前的失败风险告知，而首次无结果后的重抽成功率还取决于首次胎儿浓度、体重和两次采样间隔\citeup{10,13}；是否再次尝试还需结合孕周等条件\citeup{12}。
+
+			因此，后续主模型不再继续寻找“最优BMI切点”。参考临床上常见的BMI$<30$、$30\leq\mathrm{BMI}<35$、BMI$\geq35$仅作为外部给定的粗分层，用于报告风险和策略；估计层仍允许三组收缩为共同的达标概率曲线。决策层则把首次检测周、失败后重检、期望检测次数、获得可靠筛查结果的概率和延迟损失放入同一策略函数，并在预先声明的误差、重检间隔和损失场景下寻找Pareto稳健解。
 			
+			\subsection{主模型建立与求解}
 			\subsection{误差分析与稳健性检验}
 			
 			\subsection{第二问结论}
@@ -389,6 +446,8 @@
 		\item BENNETTE C, VICKERS A. Against quantiles: categorization of continuous variables in epidemiologic research, and its discontents[J]. BMC Medical Research Methodology, 2012, 12: 21. DOI:10.1186/1471-2288-12-21.
 		\item BENN P, VALENTI E, SHAH S, et al. Factors associated with informative redraw after an initial no result in noninvasive prenatal testing[J]. Obstetrics \& Gynecology, 2018, 132(2): 428--435. DOI:10.1097/AOG.0000000000002728.
 		\item RIZOPOULOS D, TAYLOR J M G, VAN ROSMALEN J, et al. Personalized screening intervals for biomarkers using joint models for longitudinal and survival data[J]. Biostatistics, 2016, 17(1): 149--164. DOI:10.1093/biostatistics/kxv031.
+		\item AMERICAN COLLEGE OF OBSTETRICIANS AND GYNECOLOGISTS. Screening for Fetal Chromosomal Abnormalities[EB/OL]. (2026-01)[2026-08-16]. https://www.acog.org/clinical/clinical-guidance/practice-advisory/articles/2026/01/screening-for-fetal-chromosomal-abnormalities.
+		\item HOPKINS M K, KOELPER N, CALDWELL S, et al. Obesity and no call results: optimal timing of cell-free DNA testing and redraw[J]. American Journal of Obstetrics and Gynecology, 2021, 225(4): 417.e1--417.e10. DOI:10.1016/j.ajog.2021.04.212.
 	\end{enumerate}
 	\end{spacing}
 	
