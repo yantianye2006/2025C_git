@@ -152,8 +152,8 @@
 			\end{table}
 		
 		%正式建模	
-			\section{问题1建模}
-			\subsection{预实验与文献综述}
+			\section{问题一建模}
+			\subsection{预实验}
 			\subsubsection{预实验设计}
 			Y染色体浓度是取值于$(0,1)$的比例变量，其随孕周和BMI的变化既可能呈现阈值、饱和等非线性，也可能受测序质量、GC含量及异常读段记录的影响；同时，同一孕妇的多次检测和技术复测会引入显著的组内相关。若直接对1082条记录作普通回归，不仅可能将个体间差异误判为随孕周的纵向变化，也会高估模型的泛化能力。因此，预实验围绕``是否需要非线性结构、是否应重构目标尺度或加入质量信息、以及是否必须显式处理重复测量''三个不确定因素展开。
 
@@ -267,12 +267,23 @@
 			\end{tabular}
 			\end{table}
 
+			图\ref{fig:q1_structure_validation}从数据结构、核心效应及候选模型的相对验证表现三个层面汇总问题1的证据：重复检测轨迹揭示了显著的个体异质性；开发集与锁定测试集的系数方向保持一致；候选模型的比较则以同一折的均值模型为基准，避免将不同验证人群的共同难度误读为模型差异。
+
+			\begin{figure}[htbp]
+			\centering
+			\includegraphics[width=\textwidth]{论文图表/q1_figure_1.pdf}
+			\caption{问题1的个体轨迹、组内/组间效应及候选模型验证。a：Mundlak分解下的开发集估计与锁定测试集独立重估，点为效应估计值，横线为95\%置信区间；b：267名孕妇的1082条重复检测轨迹，虚线为Y浓度4\%达标阈值；c：开发集孕妇级5折验证中各候选模型相对P0均值模型的孕妇等权$\Delta$MAE热图，每格以同一折的P0误差为基准，负值表示误差降低、正值表示误差升高，最右列为5折平均差。}
+			\label{fig:q1_structure_validation}
+			\end{figure}
+
 			模型冻结后，在53名锁定测试孕妇的214条记录上作一次外部评估。开发集和测试集的孕妇等权MAE分别为0.023423和0.023463，孕妇等权RMSE分别为0.025671和0.025745；三个可检验的核心方向（个体内孕周为正、个体间孕周为负、个体间BMI为负）在测试队列独立重估后保持一致。该检验支持关系方向的可复现性，但并不改变模型的解释性定位。
 			
 			\subsection{误差分析与方向转变}
 			主模型在开发集和锁定测试集的记录级$R^2$分别为0.201和0.253，$R^2$确实很低，但这并非是由于线性形式选择错误造成的。在6.1节的预实验中，样条、21周分段、log/logit变换及质量扩展在孕妇级交叉验证中均未达到预设升级条件，最佳方案相对均值基线的MAE改善也只有2.28\%。这说明仅凭孕周、BMI及现有质量字段，未被解释的波动并非可由继续增加函数自由度稳定捕获。若为了提高样本内$R^2$继续堆叠变量或结点，只会把少量孕妇的轨迹和技术噪声拟合成表面规律。
 
-			误差的首要来源是强烈且不可直接观测的个体基线差异。重复测量的ICC为0.658，意味着同一孕妇的检测结果比不同孕妇之间更相似；遗传背景、胎盘生物学状态及未记录的检测条件都会以该基线差异的形式进入残差。由于新孕妇在首检时没有自身历史Y浓度，随机截距即使能提高同一孕妇的回顾性拟合，也不能转化为对新孕妇的可用预测增益。这正是P2在新孕妇分组验证中未优于普通线性基线的原因，而不是应把随机截距当作提高泛化能力的工具。
+			误差的首要来源是强烈且不可直接观测的个体基线差异。重复测量的ICC为0.658，说明同一孕妇的检测结果具有较强相关性，遗传背景、胎盘生物学状态和未记录的检测条件等因素会以个体基线差异的形式进入残差。这里需要区分“纳入随机性”与“解释个体差异”：预实验P2用随机截距将观测写成$y_{ij}=f(t_{ij},b_{ij})+u_i+\varepsilon_{ij}$，可以估计$u_i$的总体方差，识别重复测量的相关结构，并据此判断正式推断必须按孕妇聚类；但模型并未观测到决定$u_i$的具体因素，因而不能仅凭孕周、BMI和质量字段预先确定某名孕妇的基线。
+
+			这一差别也再次验证了预实验的验证结果。对已有多次检测的孕妇，历史Y浓度可以帮助收缩估计其$u_i$，随机截距因而可能改善回顾性拟合；而孕妇级分组交叉验证要求验证折中的孕妇从未出现在训练折中。此时没有个人历史可供估计，只能取$\mathrm E(u_i)=0$，预测方差中仍保留$\mathrm{Var}(u_i)$。表\ref{tab:q1_pilot}中P2的孕妇等权MAE较P1恶化3.35\%。这个结果不表示个体随机性不存在，而是说明这种随机性虽能被量化，却尚不能由现有协变量转化为新孕妇的预测信息。
 
 			第二类误差来自技术复测与质量信息的不完全可观测性。复测组中位数口径下核心效应方向未反转，说明技术复测并未制造主结论；但质量扩展相对无质量样条仅改善0.44\%，且bootstrap区间跨过零。低GC、读段关系冲突、比对率和过滤率等字段只能记录部分技术过程，不能替代未记录的平台批次、样本处理及生物学波动。因此，质量变量适合作为稳健性边界，而不足以支撑把残差解释为可消除的测量误差。
 
@@ -293,8 +304,312 @@
 
 			据此分析，问题二接收的不是问题1的全样本拟合值，而是三项约束：一是以$Y\geq0.04$作为达标定义；二是按孕妇内检测序列构造左删失、区间删失和右删失的首次达标信息，不能把首次阳性当作真实达标时点；三是在BMI分组内比较达标概率与潜在风险，而非按单条浓度预测安排检测。
 			
-			
-			
+			\section{问题二建模}
+			\subsection{任务解释与结论预览}
+			\subsubsection{从“最早达标”到检测时点决策}
+			问题二要求按BMI分组，并为每组选择使潜在风险尽量小的NIPT时点。这里有两个容易混淆的量：一是Y染色体浓度首次达到$4\%$的潜在时刻，二是在某一孕周实施检测后得到可靠结果的概率。附件中同一孕妇存在纵向复测和同次采血技术复测，且116名男胎孕妇出现相邻Y浓度下降，因此不能把第一条阳性记录直接当作真实首次达标时刻。本文把目标改写为：先估计孕周$t$时获得可靠检测结果的概率，再在检测失败、重检次数和延迟风险之间选择时点。
+
+			开发集含214名孕妇。技术复测取同组中位数后，首次达标信息表现为174例左删失、35例区间删失和5例右删失；题面五组人数为5、108、83、15和3。这样的信息结构足以比较低容量策略，却不足以支持在两端小样本中自由搜索精细切点。本文因此先检验“BMI是否需要差异化检测安排”，检验通过才保留组间系数；否则仍按BMI报告风险，但不强行制造不同检测周。
+
+			\subsubsection{题目要求与本文回答}
+			表\ref{tab:q2_answer_preview}先给出第二问的答案。BMI$=30$和$35$只用于风险沟通，估计层由数据决定是否保留组间差异。孕妇级验证最终选择共用概率模型，所以三个粗分层得到相同策略；这是一项模型选择结果，不是预先假定。
+
+			\begin{table}[H]
+			\centering
+			\footnotesize
+			\renewcommand{\arraystretch}{1.18}
+			\setlength{\tabcolsep}{3pt}
+			\caption{问题二的任务、回答及证据对应关系}
+			\label{tab:q2_answer_preview}
+			\begin{tabularx}{\textwidth}{@{}p{0.16\textwidth}p{0.38\textwidth}X@{}}
+			\toprule
+			题目要求 & 本文回答 & 主要证据 \\
+			\midrule
+			BMI合理分组 & 采用$<30$、$[30,35)$、$\geq35$三个风险沟通层；估计层允许完全合并 & 四种数据分区均无稳定增益；500次选择bootstrap全部选择单组 \\
+			每组最佳时点 & 三组采用同一检测--重检策略；基准情景首检为10.5周，全情景最优值为10--22.5周 & 共用系数模型通过one-SE规则；192个预设情景中136个可行 \\
+			潜在风险最小 & 同时考虑期望检测次数、未获得可靠结果概率、延迟损失和错误接受概率 & 有限周网格的Pareto前沿与情景目标函数 \\
+			检测误差影响 & 误差改变可行率和推荐周数，但没有产生可复现的BMI组间差异 & 1000次联合bootstrap；56/192个情景达到稳定标准 \\
+			\bottomrule
+			\end{tabularx}
+			\end{table}
+
+			\subsection{BMI差异化安排的必要性检验}
+			\subsubsection{候选路线与预设判据}
+			为避免看到结果后反复改切点，开发集内固定5折孕妇级划分，同一孕妇及其技术复测不跨折，锁定测试集不参与本节新增策略的选择。以仅孕周Logistic模型P0为基线，依次比较题面BMI五组、连续BMI低阶项、低自由度样条、区间删失Weibull AFT和连续Y浓度反演。主指标为孕妇等权Brier分数，同时检查对数损失、校准误差、折间胜出次数和阈值时点波动。
+
+			判据在实验前固定：BMI候选相对P0的Brier改善至少达到$3\%$，才认为BMI提供了足以改变安排的增益；样条或反演路线相对其直接对照须改善$5\%$且至少4折胜出，才允许提高容量或改变拟合方向。表\ref{tab:q2_pilot}列出全部探针。最好的直接概率模型P1仅改善$1.60\%$，而最低Brier对应的P5相对P1只改善$0.02\%$。六条路线均未达到各自升级条件。
+
+			\begin{table}[H]
+			\centering
+			\footnotesize
+			\caption{差异化安排必要性检验的5折结果（214名开发集孕妇）}
+			\label{tab:q2_pilot}
+			\begin{tabularx}{\textwidth}{@{}cXcccc@{}}
+			\toprule
+			编号 & 模型结构 & Brier & 相对P0改善 & 胜出折数 & 最大时点SD/周 \\
+			\midrule
+			P0 & 仅孕周Logistic & 0.115946 & -- & -- & 1.70 \\
+			P1 & 孕周+题面BMI五组 & 0.114095 & $1.60\%$ & 3/5 & 3.18 \\
+			P2 & 连续BMI+交互项 & 0.114484 & $1.26\%$ & 4/5 & 3.15 \\
+			P3 & 孕周与BMI低自由度样条 & 0.114304 & $1.42\%$ & 3/5 & 5.18 \\
+			P4 & 区间删失Weibull AFT & 0.116791 & $-0.73\%$ & 2/5 & 1.24 \\
+			P5 & 连续Y低阶回归后反演 & \textbf{0.114072} & $1.62\%$ & 4/5 & 2.46 \\
+			\bottomrule
+			\end{tabularx}
+			\end{table}
+
+			\subsubsection{有限切点比较与稳定性裁决}
+			数据分区只比较$\varnothing$、$\{32\}$、$\{32,36\}$和题面切点$\{28,32,36,40\}$，分别对应不分组、两组、三组和五组。每个分区均拟合有序收缩Logistic模型，正则参数固定为
+			\[
+			\lambda\in\{0,10^{-4},10^{-3},10^{-2},10^{-1},1,10,100\},
+			\]
+			并使用one-SE规则。强收缩后，单组、两组、三组和五组的Brier分数依次为0.115981、0.115963、0.115916和0.115916，最大差仅$6.5\times10^{-5}$；500次孕妇bootstrap重新执行选择流程，单组被选中500次。因此，数据支持“当前样本不能识别稳定切点”，但不能推出BMI与Y浓度无关。
+
+			\subsubsection{方向转变与文献依据}
+			已有队列研究发现，胎儿游离DNA比例通常随孕周增加、随母体体重或BMI增加而下降，但等待的收益会随人群和检测平台变化\citeup{1,7}。统计方法研究指出，任意切分连续变量会损失信息，并使结论依赖边界\citeup{8,9}；首次无结果后的重抽成功率还与首次浓度、体重和采样间隔有关\citeup{10,13}。这些研究支持保留BMI风险分层，却不支持从本样本移植精确切点或检测周。
+
+			基于上述证据，本文不再搜索新的BMI断点，而采用$<30$、$[30,35)$和$\geq35$三个外部可解释的粗分层。三个标签只承担风险汇总和结果沟通；概率模型仍比较共用系数、组别截距和组别斜率，若组别参数不能形成稳定增益，就收缩到同一曲线。决策对象也由“单次检测的精确达标周”转为“首次检测--失败重检”的条件策略。
+
+			\begin{figure}[H]
+			\centering
+			\includegraphics[width=\textwidth]{论文图表/q2_figure_1.pdf}
+			\caption{BMI差异化检测安排的必要性检验。a：四种预设BMI分区在强收缩下的孕妇级五折Brier分数，点和横线分别为均值与标准误，浅色区域表示全局最优结果的一标准误范围；b：500次孕妇级选择bootstrap中各分区被选中的次数；c：one-SE规则选中的共用系数模型所给出的达标概率曲线，三个BMI粗分层的预测值完全重合，橙色点标出10.5周的达标概率。交叉验证与重抽选择共同表明，当前开发集不足以支持不同BMI组采用不同概率曲线；BMI分层仅用于风险沟通。}
+			\label{fig:q2_route_evidence}
+			\end{figure}
+
+			\subsection{主模型建立与求解}
+			\subsubsection{估计层：有序收缩达标概率模型}
+			令$Z_{ij}=\mathbb{I}(y_{ij}\geq0.04)$，$g(i)\in\{1,2,3\}$为第$i$名孕妇的BMI粗分层，标准化孕周为$x_{ij}=(t_{ij}-17.5)/5$。用于比较组间差异的完整模型写为
+			\begin{equation}
+			\operatorname{logit}q_{g(i)}(t_{ij})
+			=\alpha-\sum_{k=2}^{g(i)}\delta_k+\beta_{g(i)}x_{ij},
+			\qquad \delta_k\geq0,\ \beta_g\geq0,
+			\label{eq:q2_probability}
+			\end{equation}
+			其中$q_g(t)=P(Z=1\mid t,g)$。$\delta_k\geq0$保证更高BMI组不会被拟合成系统性更容易达标，$\beta_g\geq0$保证预测达标概率不随孕周下降。每名孕妇的全部记录总权重相同，以免检测次数多的孕妇主导估计。
+
+			参数通过带边界的惩罚似然求解：
+			\begin{equation}
+			\begin{aligned}
+			\mathcal{L}(\theta)=
+			&-\sum_{i=1}^{n}\frac{1}{m_i}\sum_{j=1}^{m_i}
+			\left[Z_{ij}\log q_{g(i)}(t_{ij})+(1-Z_{ij})\log\{1-q_{g(i)}(t_{ij})\}\right]\\
+			&+\lambda_I\sum_{k=2}^{3}\delta_k^2
+			+\lambda_S\sum_{g=1}^{3}(\beta_g-\bar\beta)^2,
+			\end{aligned}
+			\label{eq:q2_penalized_likelihood}
+			\end{equation}
+			其中$m_i$为第$i$名孕妇的有效观测数。本文比较共用系数、组别截距及组别截距加斜率三类配置；组别截距惩罚固定为$\lambda_I=100$，组别斜率的$\lambda_S$取$1,10,100$。各配置在相同的5折划分上计算Brier分数，落入全局最优值一个标准误以内时，优先选择参数更少的模型。式\eqref{eq:q2_penalized_likelihood}采用L-BFGS-B算法求解，概率在数值计算时截断至$[10^{-8},1-10^{-8}]$。
+
+			\subsubsection{决策层：检测--重检路径与风险函数}
+			估计层给出$q_g(t)$后，引入检测误差和至多一次重检。记$a$为真实未达标却被判为达标的概率代理，$b$为真实达标却被判为未达标的概率代理。首次获得可靠结果、错误接受和需要重检的概率分别为
+			\begin{equation}
+			S_g(t)=q_g(t)(1-b),\qquad
+			A_g(t)=\{1-q_g(t)\}a,\qquad
+			F_g(t)=1-S_g(t)-A_g(t).
+			\label{eq:q2_first_path}
+			\end{equation}
+			若首次失败后间隔$\Delta$周重检，令$\rho\in\{0.50,0.75,1.00\}$表示条件二次成功因子，则
+			\begin{equation}
+			S_g^{(2)}(t+\Delta\mid\mathrm{fail})
+			=\rho q_g(t+\Delta)(1-b).
+			\label{eq:q2_second_success}
+			\end{equation}
+			这里$\rho$是情景参数，不是附件直接估计的临床重抽成功率。累计获得可靠结果的概率$C_g(t)$、期望检测次数$N_g(t)$和延迟损失$L_g(t)$定义为
+			\begin{equation}
+			\begin{aligned}
+			C_g(t)&=S_g(t)+F_g(t)S_g^{(2)}(t+\Delta\mid\mathrm{fail}),\\
+			N_g(t)&=1+F_g(t),\\
+			L_g(t)&=D(t)+F_g(t)\{D(t+\Delta)-D(t)\},
+			\end{aligned}
+			\label{eq:q2_path_outputs}
+			\end{equation}
+			其中$D(t)$按题面规定保持早期低于中期、晚期高于中期的顺序，并在同一风险阶段内随孕周非减。$C_g(t)$只表示获得可靠筛查结果的概率，不能解释为胎儿异常检出率。
+
+			对情景$\omega=(w_N,w_C,w_L,w_A,\Delta,\eta,\rho,a,b)$，在统一量纲后定义
+			\begin{equation}
+			J_g(t;\omega)=w_NN_g(t)+w_C\{1-C_g(t)\}
+			+w_LL_g(t)+w_AA_g(t),
+			\label{eq:q2_objective}
+			\end{equation}
+			并满足
+			\begin{equation}
+			t\in\{10,10.5,\ldots,25\},\qquad C_g(t)\geq\eta.
+			\label{eq:q2_constraints}
+			\end{equation}
+			四类权重分别侧重均衡、可靠性、延迟和资源；$\Delta\in\{0.5,1.0\}$，$\eta\in\{0.90,0.95\}$，误差倍率取$0,0.5,1,1.5$。共形成$4\times2\times2\times3\times4=192$个预设情景。正文先报告$(N_g,1-C_g,L_g,A_g)$的Pareto非支配点，再给出各情景的最优时点和范围，避免用单一主观权重替代题目中没有提供的临床损失。
+
+			\subsubsection{有限网格求解算法}
+			模型只含有限周网格和有限情景，不需要启发式搜索。求解步骤如下：
+			\begin{enumerate}[label=\arabic*),itemsep=0pt,topsep=2pt]
+			\item 在固定5折上比较概率模型，以one-SE规则冻结共用或分组配置；
+			\item 在全部214名开发集孕妇上重估入选模型，生成10--25周的$q_g(t)$；
+			\item 对每个情景和每个候选周计算式\eqref{eq:q2_first_path}--\eqref{eq:q2_objective}，删除不满足式\eqref{eq:q2_constraints}的点；
+			\item 对可行点逐一检查Pareto支配关系，并按$J_g(t;\omega)$选出情景最优值；若没有可行点，则记录“不可行”，不向边界外推；
+			\item 以孕妇为单位重抽概率模型，并按技术复测组分层重抽误差率，共重复1000次。情景可行频率不低于$80\%$且最优周IQR不超过1周时，记为稳定。
+			\end{enumerate}
+
+			\subsection{求解结果}
+			\subsubsection{组间系数的最终决定}
+			表\ref{tab:q2_model_selection}给出固定$30/35$粗分层后的系数比较。组别截距模型取得最低平均Brier，但共用模型与其差值只有$4.2\times10^{-5}$，远小于5折标准误。按照one-SE规则，共用系数模型参数最少，故作为策略层的概率输入。三个BMI层随后的概率曲线和策略数值完全相同。
+
+			\begin{table}[H]
+			\centering
+			\footnotesize
+			\renewcommand{\arraystretch}{1.15}
+			\caption{固定BMI粗分层后的概率模型比较}
+			\label{tab:q2_model_selection}
+			\begin{tabular}{lcccc}
+			\toprule
+			配置 & 平均Brier & 5折标准误 & 最差折Brier & one-SE内 \\
+			\midrule
+			组别截距 & \textbf{0.115939} & 0.005801 & 0.131109 & 是 \\
+			组别截距+斜率（$\lambda_S=100$） & 0.115947 & 0.005803 & 0.131134 & 是 \\
+			共用系数 & 0.115981 & 0.005824 & 0.131167 & 是，\textbf{入选} \\
+			\bottomrule
+			\end{tabular}
+			\end{table}
+
+			\subsubsection{基准情景与全情景结果}
+			为给出可复核的代表结果，图形和主表采用预先指定的基准情景。其参数为
+			\[
+			(w_N,w_C,w_L,w_A)=(0.20,0.35,0.25,0.20),\quad
+			\Delta=0.5,\quad \eta=0.90,\quad \rho=0.75,
+			\]
+			误差倍率取1。三个BMI层的最优首检周均为10.5周，失败后于11.0周重检；累计可靠结果概率为0.9009，期望检测次数为1.1905。表\ref{tab:q2_strategy_answer}中的10.5周是基准情景解，不是脱离参数条件的临床常数。
+
+			\begin{table}[H]
+			\centering
+			\footnotesize
+			\renewcommand{\arraystretch}{1.16}
+			\caption{问题二的BMI分组与检测--重检策略结果}
+			\label{tab:q2_strategy_answer}
+			\begin{tabular}{lcccccc}
+			\toprule
+			BMI区间 & 首检/周 & 重检/周 & $C_g(t)$ & $N_g(t)$ & 全情景范围/周 & 可行率 \\
+			\midrule
+			$<30$ & 10.5 & 11.0 & 0.9009 & 1.1905 & 10--22.5 & $70.8\%$ \\
+			$[30,35)$ & 10.5 & 11.0 & 0.9009 & 1.1905 & 10--22.5 & $70.8\%$ \\
+			$\geq35$ & 10.5 & 11.0 & 0.9009 & 1.1905 & 10--22.5 & $70.8\%$ \\
+			\bottomrule
+			\end{tabular}
+			\end{table}
+
+			192个情景中有136个至少存在一个可行时点。可行情景最优首检周的下四分位数、中位数和上四分位数分别为10、10和15周，最大值为22.5周。三组结果相同，说明当前数据没有给出仅凭BMI推迟高BMI孕妇首次检测的依据。高可靠性或悲观重检假设导致不可行时，模型输出“不可行”或条件区间，而不把25周边界当作推荐值。
+
+			\begin{figure}[H]
+			\centering
+			\includegraphics[width=\textwidth]{论文图表/q2_figure_2.pdf}
+			\caption{检测次数、可靠性与延迟之间的权衡及其稳健性。a：基准情景中29个可行时点的Pareto权衡，横轴为期望检测次数，纵轴为未获得可靠结果概率，颜色表示延迟损失，星号为10.5周基准解；b：四类权重下可行情景最优首检孕周的范围与四分位区间，每类34/48个情景可行；c：192个预设情景的1000次联合bootstrap结果，虚线表示可行频率不低于80\%且最优周IQR不超过1周的稳定标准，空心外圈标出56个稳定情景。情景范围描述外生决策假设的变化，不是抽样置信区间。}
+			\label{fig:q2_strategy_robustness}
+			\end{figure}
+
+			\subsection{检测误差与稳健性检验}
+			\subsubsection{误差口径与参数扰动}
+			同次采血技术复测组没有临床真值，故本文以复测组中位数形成共识标签，再计算单条复测相对该共识的阈值不一致率。点估计的假阳性代理为0.1304，假阴性代理为0.0556。二者只用于误差情景，不能表述为NIPT的临床假阳性率和假阴性率。联合bootstrap按孕妇重抽概率模型，并按共识状态分层重抽30个技术复测组；1000次重复中，假阳性代理的$2.5\%$、中位数和$97.5\%$分位数为0、0.1304和0.2500，假阴性代理对应为0、0.0545和0.1200。
+
+			\subsubsection{网格、重检假设与联合bootstrap}
+			表\ref{tab:q2_robustness}汇总三项决定性检验。首先，将主网格由0.5周细化至0.1周后，136个共同可行情景的最优时点中位绝对差为0，最大差0.4周，说明数值网格足够细。其次，$\rho$由0.50增至1.00时，可行率由$37.5\%$升至$100\%$，二次成功假设会实质改变策略。最后，仅56个情景同时达到可行频率和时点IQR标准，占$29.2\%$。因此，算法求解稳定不等于决策对外生参数稳定。
+
+			\begin{table}[H]
+			\centering
+			\footnotesize
+			\renewcommand{\arraystretch}{1.16}
+			\caption{问题二的误差与稳健性检验结果}
+			\label{tab:q2_robustness}
+			\begin{tabularx}{\textwidth}{@{}p{0.25\textwidth}p{0.27\textwidth}X@{}}
+			\toprule
+			检验对象 & 结果 & 对题目回答的影响 \\
+			\midrule
+			0.5周与0.1周网格 & 中位绝对差0周；最大差0.4周；可行性无错配 & 排除离散网格过粗造成的时点漂移 \\
+			二次成功因子$\rho$ & $0.50/0.75/1.00$时可行率为$37.5\%/75.0\%/100\%$ & 重检信息不足时必须报告情景范围，不能给无条件单点 \\
+			1000次联合bootstrap & 56/192个情景稳定，稳定率$29.2\%$ & 只对稳定情景给点值，其余报告区间或不可行 \\
+			误差率重抽 & 假阳性代理中位0.1304，假阴性代理中位0.0545 & 误差扩大可行性不确定性，但未产生BMI组间差异 \\
+			\bottomrule
+			\end{tabularx}
+			\end{table}
+
+			\subsection{第二问结论}
+			第二问得到以下结论。
+			\begin{enumerate}[label=\arabic*),itemsep=0pt,topsep=2pt]
+			\item BMI按$<30$、$[30,35)$和$\geq35$分为三个风险沟通层。数据驱动的四种分区均未通过预设增益标准，500次选择bootstrap全部选择单组；固定粗分层后的one-SE比较也选中共用系数模型。因此，现有样本不支持三组采用不同检测时点。
+			\item 在均衡权重、可靠性下限0.90、二次成功因子0.75、误差倍率1和0.5周重检间隔的基准情景下，三个BMI层均在10.5周首次检测，失败后于11.0周重检，累计可靠结果概率为0.9009。该时点只对基准情景成立。
+			\item 192个预设情景中136个可行，可行情景的最优首检周为10--22.5周。1000次联合bootstrap仅有56个情景达到稳定标准，说明检测误差、可靠性要求和条件重检成功率决定了可否给出单点。对不稳定或不可行情景，本文保留Pareto集合和条件区间，不作边界外推。
+			\item 本模型给出“获得可靠NIPT结果”的条件策略，不估计胎儿异常检出率。附件缺少临床损失和完整重抽结局，故$\rho$与误差率只作情景参数。
+			\end{enumerate}
+
+			\section{问题三建模}
+			\subsection{建模准备与预实验}
+			\subsubsection{承接关系与因素扩展}
+			问题一刻画了孕周、BMI与Y染色体浓度之间的关系，并提示个体差异不能忽略；问题二进一步把该关系转化为获得可靠NIPT结果的概率模型，给出了BMI风险沟通层、首次检测与条件重检策略。问题三在此基础上追问：加入年龄、身高、体重、受孕方式、妊娠次数和生产次数等信息后，能否得到稳定的额外预测能力，并据此改变问题二的分组或检测时点。因而，本问不重新拟合一套彼此独立的模型，而以问题二的共用系数Logistic模型为基线，只检验新增信息的边际价值。
+
+			因素增加并不等于信息增加。BMI满足$BMI=W/H^2$，在本数据中该恒等关系的最大计算误差为0；若将BMI、身高和体重同时放入模型，设计矩阵条件数为35.642，三者的VIF分别达到200.949、97.503和317.581。这样的参数估计难以解释，也容易随样本扰动而改变。因此，预实验只比较BMI、身高、体重及其允许的最小组合，不让三者同时入模。变量还按决策时点分成两类：孕周及孕妇基本信息可用于首次检测，首次检测结果和测序质量指标只能用于失败后的条件重检，避免使用决策发生后才可获得的信息。
+
+			\subsubsection{预实验设计}
+			预实验使用214名孕妇的开发样本，将同一孕妇的技术重复先取中位数，并在五折交叉验证中按孕妇分组，防止同一人的记录同时进入训练集和验证集。各孕妇等权，主指标为折外Brier分数，同时记录Log Loss、校准误差、折间波动和最差折表现。低容量候选只有在Brier分数相对改善不少于$3\%$、至少赢得4折且任一折恶化不超过$5\%$时才保留；非线性升级的改善门槛提高到$5\%$。表\ref{tab:q3_pilot_design}列出各项预实验及其作用。
+
+			\begin{table}[H]
+			\centering
+			\small
+			\renewcommand{\arraystretch}{1.16}
+			\caption{问题三预实验设计}
+			\label{tab:q3_pilot_design}
+			\begin{tabularx}{\textwidth}{@{}p{0.10\textwidth}p{0.22\textwidth}X p{0.25\textwidth}@{}}
+			\toprule
+			编号 & 实验项目 & 实验目标 & 主要判定内容 \\
+			\midrule
+			Q3-P0 & 基线复现 & 复现问题二的低容量概率模型，固定后续比较口径 & 折外Brier、Log Loss、校准误差 \\
+			Q3-P1 & 变量结构审计 & 检查缺失、可得时点、BMI恒等关系和共线性 & 条件数、VIF及变量可用阶段 \\
+			Q3-P2 & 最小增量比较 & 逐项或按允许的最小组合加入孕妇基本信息 & 相对改善、胜出折数、最差折恶化 \\
+			Q3-P3 & 变量块消融 & 对通过初筛的变量块执行前向加入与删除复核 & 被稳定保留的变量块 \\
+			Q3-P4 & 固定非线性对照 & 比较低容量模型与预先限定的非线性表达 & 相对P3的Brier改善是否达到$5\%$ \\
+			Q3-P5 & 条件重检模型 & 对首次失败者加入阈值距离和测序质量指标 & 重检预测增益及跨折稳定性 \\
+			Q3-P6 & 策略回放 & 将最终候选代回问题二的优化程序 & 最优时点变化率和Pareto集合重合度 \\
+			\bottomrule
+			\end{tabularx}
+			\end{table}
+
+			\subsubsection{预实验结果分析}
+			基线模型的折外Brier分数为0.115970，Log Loss为0.394327，平均绝对校准误差为0.014544，五折Brier标准差为0.013012。单独加入BMI后，Brier分数降至0.114580，相对改善$1.20\%$，虽在4折中优于基线，但没有达到$3\%$的预设门槛。首检侧表现最好的候选为“孕周、身高和体重”，Brier分数为0.113581，相对改善$2.06\%$，仅在3折中胜出；“孕周、BMI和身高”的改善为$2.03\%$，同样只胜出3折。年龄和妊娠次数分别使Brier分数恶化$0.92\%$和$0.84\%$，受孕方式几乎不改变结果，生产次数仅改善$0.10\%$。据此，变量块消融没有保留新的首检变量。
+
+			固定非线性模型相对低容量模型只改善$0.15\%$，且仅在2折中占优，复杂化没有得到数据支持。条件重检共有97对“首次失败--后续检测”记录，来自60名孕妇。加入阈值距离和测序质量指标后，最佳候选的Brier分数由0.211978降至0.175768，表观改善为$17.08\%$，但折间标准差达到0.130629，最差折反而恶化$28.48\%$。这组结果说明质量信息可能有助于解释重检成败，但样本量和跨折波动不足以支持将其写入正式策略。
+
+			\begin{table}[H]
+			\centering
+			\small
+			\renewcommand{\arraystretch}{1.16}
+			\caption{问题三预实验的关键结果}
+			\label{tab:q3_pilot_results}
+			\begin{tabularx}{\textwidth}{@{}p{0.24\textwidth}p{0.22\textwidth}p{0.22\textwidth}X@{}}
+			\toprule
+			比较对象 & Brier分数或策略指标 & 相对对照结果 & 预实验判断 \\
+			\midrule
+			问题二基线 & 0.115970 & 比较基准 & 保留 \\
+			加入BMI & 0.114580 & 改善$1.20\%$，胜出4/5折 & 未达$3\%$门槛 \\
+			加入身高和体重 & 0.113581 & 改善$2.06\%$，胜出3/5折 & 增益不足且不稳定 \\
+			固定非线性升级 & 0.115792 & 改善$0.15\%$，胜出2/5折 & 不升级 \\
+			重检质量模型 & 0.175768 & 对重检基线改善$17.08\%$；最差折恶化$28.48\%$ & 仅作敏感性分析 \\
+			策略回放 & 最优时点变化率0 & Pareto时点集合Jaccard系数为1 & 沿用问题二策略 \\
+			\bottomrule
+			\end{tabularx}
+			\end{table}
+
+			\begin{figure}[H]
+			\centering
+			\fbox{\parbox{0.92\textwidth}{\centering
+			\vspace{0.55em}
+			\heiti 可视化预留三：问题三预实验增量与稳定性\\[0.35em]
+			\song\small
+			(a) 各首检候选相对基线的Brier改善率，并标出$3\%$保留线；
+			(b) 基线、最佳低容量候选与非线性模型的五折Brier分布；
+			(c) 条件重检候选的平均改善与最差折恶化，突出平均收益和稳定性之间的差异。
+			\vspace{0.55em}}}
+			\caption{新增因素的预测增量及跨折稳定性。图中应同时展示平均结果、逐折变化和预设判定线，避免只报告最优均值。}
+			\label{fig:q3_pilot_increment}
+			\end{figure}
+
+			策略回放中，三个BMI风险沟通层的最优时点变化率均为0，候选模型与问题二基线的Pareto时点集合Jaccard系数均为1，期望检测次数、未获得可靠结果概率和延迟损失也没有变化。因此，现有结果支持的回答是：年龄、身高、体重、BMI、受孕方式及孕产史已经被纳入检验，但它们在当前样本中没有提供足够稳定的首检增量信息；非线性模型也没有必要。问题三应沿用问题二的共用系数模型、BMI风险沟通层和条件检测策略，不因表观小幅增益另设分组或调整时点。测序质量指标只作为重检机制的敏感性证据，待获得更多完整重检结局后再评估。
+
 			\section{结论}
 			%文章主结论，最后正面回应题目要求
 		
@@ -323,6 +638,13 @@
 		\item RINK B D, DUGOFF L, KULLER J A, et al. Society for Maternal-Fetal Medicine Consult Series \#74: Cell-free DNA screening for aneuploidies: Updated guidance[J/OL]. Pregnancy, 2025, 1: e70139[2026-08-15]. DOI:10.1002/pmf2.70139.
 		\item MUNDLAK Y. On the pooling of time series and cross section data[J]. Econometrica, 1978, 46(1): 69--85. DOI:10.2307/1913646.
 		\item LIANG K Y, ZEGER S L. Longitudinal data analysis using generalized linear models[J]. Biometrika, 1986, 73(1): 13--22. DOI:10.1093/biomet/73.1.13.
+		\item WANG E, BATEY A, STRUBLE C, et al. Gestational age and maternal weight effects on fetal cell-free DNA in maternal plasma[J]. Prenatal Diagnosis, 2013, 33(7): 662--666. DOI:10.1002/pd.4119.
+		\item ALTMAN D G, ROYSTON P. The cost of dichotomising continuous variables[J]. BMJ, 2006, 332(7549): 1080. DOI:10.1136/bmj.332.7549.1080.
+		\item BENNETTE C, VICKERS A. Against quantiles: categorization of continuous variables in epidemiologic research, and its discontents[J]. BMC Medical Research Methodology, 2012, 12: 21. DOI:10.1186/1471-2288-12-21.
+		\item BENN P, VALENTI E, SHAH S, et al. Factors associated with informative redraw after an initial no result in noninvasive prenatal testing[J]. Obstetrics \& Gynecology, 2018, 132(2): 428--435. DOI:10.1097/AOG.0000000000002728.
+		\item RIZOPOULOS D, TAYLOR J M G, VAN ROSMALEN J, et al. Personalized screening intervals for biomarkers using joint models for longitudinal and survival data[J]. Biostatistics, 2016, 17(1): 149--164. DOI:10.1093/biostatistics/kxv031.
+		\item AMERICAN COLLEGE OF OBSTETRICIANS AND GYNECOLOGISTS. Screening for Fetal Chromosomal Abnormalities[EB/OL]. (2026-01)[2026-08-16]. https://www.acog.org/clinical/clinical-guidance/practice-advisory/articles/2026/01/screening-for-fetal-chromosomal-abnormalities.
+		\item HOPKINS M K, KOELPER N, CALDWELL S, et al. Obesity and no call results: optimal timing of cell-free DNA testing and redraw[J]. American Journal of Obstetrics and Gynecology, 2021, 225(4): 417.e1--417.e10. DOI:10.1016/j.ajog.2021.04.212.
 	\end{enumerate}
 	\end{spacing}
 	
