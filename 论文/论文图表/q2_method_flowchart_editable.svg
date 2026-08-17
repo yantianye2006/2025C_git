@@ -1,0 +1,276 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+     width="1920" height="1320" viewBox="0 0 1920 1320">
+  <title>问题二：BMI分层下的NIPT检测—重检时点决策流程</title>
+  <desc>可在Adobe Illustrator中编辑的原生SVG流程图。突出上游数据、达标概率估计层、检测重检决策层及计算过程。</desc>
+
+  <defs>
+    <style><![CDATA[
+      .font { font-family: "Microsoft YaHei", "Noto Sans CJK SC", "Source Han Sans SC", sans-serif; }
+      .title { font-size: 34px; font-weight: 700; fill: #17324D; }
+      .subtitle { font-size: 16px; font-weight: 400; fill: #5C6F82; letter-spacing: 0.5px; }
+      .band-title { font-size: 22px; font-weight: 700; fill: #FFFFFF; }
+      .band-no { font-size: 14px; font-weight: 700; fill: #FFFFFF; letter-spacing: 1px; }
+      .card-title { font-size: 20px; font-weight: 700; fill: #17324D; }
+      .card-text { font-size: 15px; font-weight: 400; fill: #405466; }
+      .small { font-size: 13px; font-weight: 400; fill: #5C6F82; }
+      .formula { font-family: "Cambria Math", "Times New Roman", serif; font-size: 16px; fill: #17324D; }
+      .tag { font-size: 13px; font-weight: 700; fill: #FFFFFF; }
+      .result-title { font-size: 20px; font-weight: 700; fill: #0D493C; }
+      .result-main { font-size: 24px; font-weight: 700; fill: #0D493C; }
+      .result-text { font-size: 15px; font-weight: 400; fill: #315E54; }
+      .arrow { fill: none; stroke: #61798F; stroke-width: 3; marker-end: url(#arrow); }
+      .arrow-orange { fill: none; stroke: #E07B39; stroke-width: 3; marker-end: url(#arrow-orange); }
+      .arrow-teal { fill: none; stroke: #248A78; stroke-width: 3; marker-end: url(#arrow-teal); }
+      .dash { fill: none; stroke: #7D91A5; stroke-width: 2; stroke-dasharray: 7 6; marker-end: url(#arrow); }
+    ]]></style>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#61798F"/>
+    </marker>
+    <marker id="arrow-orange" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#E07B39"/>
+    </marker>
+    <marker id="arrow-teal" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#248A78"/>
+    </marker>
+  </defs>
+
+  <!-- 画布背景 -->
+  <g id="background">
+    <rect x="0" y="0" width="1920" height="1320" fill="#F7F9FC"/>
+    <rect x="52" y="30" width="1816" height="1260" rx="26" fill="#FFFFFF" stroke="#D9E2EA" stroke-width="2"/>
+  </g>
+
+  <!-- 标题 -->
+  <g id="title-area" class="font">
+    <text class="title" x="92" y="86">问题二：BMI 分层下的 NIPT 检测—重检时点决策</text>
+    <text class="subtitle" x="92" y="116">由男胎纵向检测记录出发，经“达标概率估计”与“风险决策优化”两级模型生成条件策略</text>
+    <line x1="92" y1="136" x2="1828" y2="136" stroke="#D9E2EA" stroke-width="2"/>
+  </g>
+
+  <!-- 上游数据带 -->
+  <g id="upstream-data-band" class="font">
+    <rect x="80" y="166" width="86" height="240" rx="18" fill="#315B7D"/>
+    <text class="band-no" x="123" y="205" text-anchor="middle">UPSTREAM</text>
+    <text class="band-title" x="123" y="289" text-anchor="middle" transform="rotate(-90 123 289)">上游数据</text>
+
+    <rect x="194" y="166" width="1586" height="240" rx="18" fill="#EDF4F8" stroke="#BFD2DF" stroke-width="2"/>
+
+    <!-- 原始数据 -->
+    <g id="raw-data-card">
+      <rect x="222" y="194" width="350" height="184" rx="14" fill="#FFFFFF" stroke="#9DB7C9" stroke-width="2"/>
+      <rect x="242" y="211" width="84" height="26" rx="13" fill="#315B7D"/>
+      <text class="tag" x="284" y="229" text-anchor="middle">原始输入</text>
+      <text class="card-title" x="242" y="266">男胎纵向检测表</text>
+      <text class="card-text" x="242" y="294">
+        <tspan x="242" dy="0">1082 条记录 · 267 名孕妇</tspan>
+        <tspan x="242" dy="25">检测孕周 J、BMI、Y 浓度</tspan>
+        <tspan x="242" dy="25">孕妇编号、抽血次数、技术复测</tspan>
+        <tspan x="242" dy="25">测序质量与读段冲突标记</tspan>
+      </text>
+    </g>
+
+    <!-- 清洗与派生 -->
+    <g id="preprocessing-card">
+      <rect x="622" y="194" width="448" height="184" rx="14" fill="#FFFFFF" stroke="#9DB7C9" stroke-width="2"/>
+      <rect x="642" y="211" width="98" height="26" rx="13" fill="#4C7695"/>
+      <text class="tag" x="691" y="229" text-anchor="middle">统一与派生</text>
+      <text class="card-title" x="642" y="266">构造问题二可用的数据口径</text>
+      <text class="card-text" x="642" y="294">
+        <tspan x="642" dy="0">连续孕周：t = 整周 + 天数 / 7</tspan>
+        <tspan x="642" dy="25">达标标签：Z = I(Y ≥ 0.04)</tspan>
+        <tspan x="642" dy="25">同次采血技术复测 → 组内中位数</tspan>
+        <tspan x="642" dy="25">同一孕妇及复测组始终绑定，避免泄露</tspan>
+      </text>
+    </g>
+
+    <!-- 建模数据与先验约束 -->
+    <g id="analysis-data-card">
+      <rect x="1120" y="194" width="632" height="184" rx="14" fill="#FFFFFF" stroke="#9DB7C9" stroke-width="2"/>
+      <rect x="1140" y="211" width="110" height="26" rx="13" fill="#6A8DA7"/>
+      <text class="tag" x="1195" y="229" text-anchor="middle">建模边界</text>
+      <text class="card-title" x="1140" y="266">开发/验证结构与上游约束</text>
+      <text class="card-text" x="1140" y="294">
+        <tspan x="1140" dy="0">214 名开发集（孕妇级 5 折）｜53 名锁定测试集</tspan>
+        <tspan x="1140" dy="25">174 左删失 · 35 区间删失 · 5 右删失；116 人浓度非单调</tspan>
+        <tspan x="1140" dy="25">BMI 沟通层：&lt;30、[30,35)、≥35；不预设三组必须不同</tspan>
+        <tspan x="1140" dy="25">复测不一致率提供误差代理 a、b；不解释为临床误差率</tspan>
+      </text>
+    </g>
+
+    <path class="arrow" d="M572 286 H610"/>
+    <path class="arrow" d="M1070 286 H1108"/>
+  </g>
+
+  <!-- 层级1：概率估计 -->
+  <g id="model-layer-1" class="font">
+    <rect x="80" y="436" width="86" height="286" rx="18" fill="#D66A2E"/>
+    <text class="band-no" x="123" y="486" text-anchor="middle">LEVEL 1</text>
+    <text class="band-title" x="123" y="588" text-anchor="middle" transform="rotate(-90 123 588)">达标概率估计</text>
+
+    <rect x="194" y="436" width="1586" height="286" rx="18" fill="#FFF3EA" stroke="#F1C7AA" stroke-width="2"/>
+
+    <!-- 输入 -->
+    <g id="level1-input">
+      <rect x="222" y="466" width="270" height="226" rx="14" fill="#FFFFFF" stroke="#E9AE84" stroke-width="2"/>
+      <text class="card-title" x="242" y="500">① 模型输入</text>
+      <text class="card-text" x="242" y="532">
+        <tspan x="242" dy="0">观测对 (tᵢⱼ, Zᵢⱼ)</tspan>
+        <tspan x="242" dy="26">BMI 层 g(i) ∈ {1,2,3}</tspan>
+        <tspan x="242" dy="26">标准化孕周</tspan>
+      </text>
+      <rect x="242" y="614" width="230" height="48" rx="9" fill="#FFF7F1" stroke="#F1C7AA"/>
+      <text class="formula" x="357" y="645" text-anchor="middle">xᵢⱼ = (tᵢⱼ − 17.5) / 5</text>
+    </g>
+
+    <!-- 概率模型 -->
+    <g id="level1-probability-model">
+      <rect x="532" y="466" width="484" height="226" rx="14" fill="#FFFFFF" stroke="#E9AE84" stroke-width="2"/>
+      <text class="card-title" x="552" y="500">② 有序收缩 Logistic 模型</text>
+      <rect x="552" y="519" width="444" height="57" rx="9" fill="#FFF7F1" stroke="#F1C7AA"/>
+      <text class="formula" x="774" y="554" text-anchor="middle">logit q<tspan baseline-shift="sub" font-size="12">g(i)</tspan>(tᵢⱼ) = α − Σδ<tspan baseline-shift="sub" font-size="12">k</tspan> + β<tspan baseline-shift="sub" font-size="12">g(i)</tspan>xᵢⱼ</text>
+      <text class="card-text" x="552" y="605">
+        <tspan x="552" dy="0">δₖ ≥ 0：高 BMI 组不被拟合成系统性更易达标</tspan>
+        <tspan x="552" dy="25">βg ≥ 0：达标概率不随孕周下降</tspan>
+        <tspan x="552" dy="25">每名孕妇总权重相同，抑制多次检测者主导</tspan>
+      </text>
+    </g>
+
+    <!-- 求解选择 -->
+    <g id="level1-fitting-selection">
+      <rect x="1056" y="466" width="414" height="226" rx="14" fill="#FFFFFF" stroke="#E9AE84" stroke-width="2"/>
+      <text class="card-title" x="1076" y="500">③ 求解与模型冻结</text>
+      <text class="card-text" x="1076" y="532">
+        <tspan x="1076" dy="0">惩罚负对数似然 + 参数边界</tspan>
+        <tspan x="1076" dy="25">L-BFGS-B 数值优化</tspan>
+        <tspan x="1076" dy="25">比较：共用系数 / 组别截距 / 组别斜率</tspan>
+        <tspan x="1076" dy="25">5 折孕妇等权 Brier + one-SE 规则</tspan>
+      </text>
+      <rect x="1076" y="638" width="374" height="34" rx="8" fill="#FDE5D4"/>
+      <text class="small" x="1263" y="660" text-anchor="middle" fill="#A64D1F">参数更少且位于 one-SE 内 → 优先保留</text>
+    </g>
+
+    <!-- 输出 -->
+    <g id="level1-output">
+      <rect x="1510" y="466" width="242" height="226" rx="14" fill="#FFF9F4" stroke="#D66A2E" stroke-width="3"/>
+      <text class="card-title" x="1530" y="500">层级 1 输出</text>
+      <text class="card-text" x="1530" y="535">
+        <tspan x="1530" dy="0">10–25 周的</tspan>
+        <tspan x="1530" dy="25">达标概率曲线 qg(t)</tspan>
+        <tspan x="1530" dy="36">one-SE 选择：</tspan>
+        <tspan x="1530" dy="25" font-weight="700" fill="#B95621">共用系数模型</tspan>
+        <tspan x="1530" dy="25">三组概率曲线重合</tspan>
+      </text>
+    </g>
+
+    <path class="arrow-orange" d="M492 579 H520"/>
+    <path class="arrow-orange" d="M1016 579 H1044"/>
+    <path class="arrow-orange" d="M1470 579 H1498"/>
+  </g>
+
+  <!-- 层级1到层级2 -->
+  <path class="arrow-teal" d="M1631 692 V754 H438 V788"/>
+  <text class="font small" x="1050" y="748" text-anchor="middle" fill="#248A78">将冻结后的 qg(t) 作为决策层概率输入</text>
+
+  <!-- 层级2：路径决策 -->
+  <g id="model-layer-2" class="font">
+    <rect x="80" y="780" width="86" height="338" rx="18" fill="#177C6C"/>
+    <text class="band-no" x="123" y="830" text-anchor="middle">LEVEL 2</text>
+    <text class="band-title" x="123" y="965" text-anchor="middle" transform="rotate(-90 123 965)">检测—重检决策</text>
+
+    <rect x="194" y="780" width="1586" height="338" rx="18" fill="#EAF7F4" stroke="#A8D5CC" stroke-width="2"/>
+
+    <!-- 情景输入 -->
+    <g id="level2-scenario-input">
+      <rect x="222" y="810" width="316" height="278" rx="14" fill="#FFFFFF" stroke="#86C1B5" stroke-width="2"/>
+      <text class="card-title" x="242" y="844">④ 决策情景输入</text>
+      <text class="card-text" x="242" y="876">
+        <tspan x="242" dy="0">概率曲线 qg(t)</tspan>
+        <tspan x="242" dy="24">误差代理：a（错误接受）、b（错误拒绝）</tspan>
+        <tspan x="242" dy="24">重检：间隔 Δ；条件成功因子 ρ</tspan>
+        <tspan x="242" dy="24">可靠性下限 η；延迟函数 D(t)</tspan>
+        <tspan x="242" dy="24">风险权重 (wN, wC, wL, wA)</tspan>
+      </text>
+      <rect x="242" y="1011" width="276" height="52" rx="9" fill="#F1FBF8" stroke="#A8D5CC"/>
+      <text class="small" x="380" y="1033" text-anchor="middle">4 类权重 × 2 个 Δ × 2 个 η</text>
+      <text class="small" x="380" y="1052" text-anchor="middle">× 3 个 ρ × 4 个误差倍率 = 192 情景</text>
+    </g>
+
+    <!-- 路径概率 -->
+    <g id="level2-path-calculation">
+      <rect x="578" y="810" width="424" height="278" rx="14" fill="#FFFFFF" stroke="#86C1B5" stroke-width="2"/>
+      <text class="card-title" x="598" y="844">⑤ 首检—重检路径计算</text>
+      <text class="formula" x="598" y="881">Sg(t) = qg(t)(1−b)</text>
+      <text class="small" x="840" y="881">首次可靠</text>
+      <text class="formula" x="598" y="911">Ag(t) = {1−qg(t)}a</text>
+      <text class="small" x="840" y="911">错误接受</text>
+      <text class="formula" x="598" y="941">Fg(t) = 1−Sg(t)−Ag(t)</text>
+      <text class="small" x="840" y="941">进入重检</text>
+      <line x1="598" y1="958" x2="982" y2="958" stroke="#C8E2DC" stroke-width="2"/>
+      <text class="formula" x="598" y="986">Sg²(t+Δ|fail) = ρqg(t+Δ)(1−b)</text>
+      <text class="card-text" x="598" y="1021">
+        <tspan x="598" dy="0">输出：累计可靠概率 Cg(t)</tspan>
+        <tspan x="598" dy="24">期望检测次数 Ng(t)｜延迟损失 Lg(t)</tspan>
+      </text>
+    </g>
+
+    <!-- 优化 -->
+    <g id="level2-optimization">
+      <rect x="1042" y="810" width="374" height="278" rx="14" fill="#FFFFFF" stroke="#86C1B5" stroke-width="2"/>
+      <text class="card-title" x="1062" y="844">⑥ 有限网格约束优化</text>
+      <rect x="1062" y="862" width="334" height="73" rx="9" fill="#F1FBF8" stroke="#A8D5CC"/>
+      <text class="formula" x="1229" y="890" text-anchor="middle">Jg(t) = wN·Ng(t) + wC·{1−Cg(t)}</text>
+      <text class="formula" x="1229" y="918" text-anchor="middle">+ wL·Lg(t) + wA·Ag(t)</text>
+      <text class="card-text" x="1062" y="970">
+        <tspan x="1062" dy="0">枚举 t = 10, 10.5, …, 25 周</tspan>
+        <tspan x="1062" dy="24">删除 Cg(t) &lt; η 的不可行点</tspan>
+        <tspan x="1062" dy="24">检查 Pareto 支配关系</tspan>
+        <tspan x="1062" dy="24">在可行点中取 arg min Jg(t)</tspan>
+      </text>
+    </g>
+
+    <!-- 稳健性 -->
+    <g id="level2-robustness">
+      <rect x="1456" y="810" width="296" height="278" rx="14" fill="#F7FFFC" stroke="#177C6C" stroke-width="3"/>
+      <text class="card-title" x="1476" y="844">⑦ 稳健性裁决</text>
+      <text class="card-text" x="1476" y="878">
+        <tspan x="1476" dy="0">联合 bootstrap × 1000</tspan>
+        <tspan x="1476" dy="25">• 按孕妇重抽概率模型</tspan>
+        <tspan x="1476" dy="25">• 按复测共识状态重抽 a、b</tspan>
+        <tspan x="1476" dy="34">稳定条件：</tspan>
+        <tspan x="1476" dy="25" font-weight="700" fill="#11685A">可行频率 ≥ 80%</tspan>
+        <tspan x="1476" dy="25" font-weight="700" fill="#11685A">最优周 IQR ≤ 1 周</tspan>
+        <tspan x="1476" dy="34">否则报告区间或“不可行”</tspan>
+      </text>
+    </g>
+
+    <path class="arrow-teal" d="M538 949 H566"/>
+    <path class="arrow-teal" d="M1002 949 H1030"/>
+    <path class="arrow-teal" d="M1416 949 H1444"/>
+  </g>
+
+  <!-- 最终策略输出 -->
+  <g id="final-output" class="font">
+    <rect x="194" y="1148" width="1586" height="112" rx="18" fill="#E0F3EE" stroke="#177C6C" stroke-width="2"/>
+    <rect x="220" y="1170" width="160" height="68" rx="13" fill="#177C6C"/>
+    <text class="tag" x="300" y="1197" text-anchor="middle">论文最终策略</text>
+    <text class="band-title" x="300" y="1225" text-anchor="middle">条件决策输出</text>
+
+    <text class="result-title" x="418" y="1184">基准情景（三个 BMI 沟通层相同）</text>
+    <text class="result-main" x="418" y="1221">10.5 周首检 → 失败后 11.0 周重检</text>
+    <text class="result-text" x="418" y="1246">Cg(t)=0.9009 ｜ Ng(t)=1.1905</text>
+
+    <line x1="1050" y1="1171" x2="1050" y2="1238" stroke="#96CABE" stroke-width="2"/>
+    <text class="result-title" x="1082" y="1184">全情景与不确定性</text>
+    <text class="result-text" x="1082" y="1213">136 / 192 个情景可行；最优首检范围 10–22.5 周</text>
+    <text class="result-text" x="1082" y="1240">仅 56 / 192 个情景稳定；不稳定情景保留 Pareto 集合或条件区间</text>
+  </g>
+
+  <path class="arrow-teal" d="M1604 1088 V1136"/>
+
+  <!-- 页脚说明 -->
+  <g id="footnote" class="font">
+    <text class="small" x="92" y="1284">注：BMI = 30、35 为风险沟通边界，不是当前数据识别出的生物学切点；本流程输出“获得可靠筛查结果”的条件策略，不等同于胎儿异常检出概率。</text>
+    <text class="small" x="1828" y="1284" text-anchor="end">图中对象均为独立 SVG 分组，可在 Adobe Illustrator 中编辑</text>
+  </g>
+</svg>
