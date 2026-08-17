@@ -108,7 +108,7 @@
 			男胎有39个、女胎有32个同孕妇同孕周同抽血次数的复测组，分别含99条和83条记录；它们代表技术重复而非可删除的行重复，故记为同一复测组，并生成编号字段\texttt{replicate\_group\_id}（复测组编号）。男胎116名孕妇出现相邻Y浓度下降，故不预设Y浓度单调增加，也不以线性插值虚构首次达标时点；问题2、3改用左删失、区间删失和右删失结构描述达标信息\citeup{3}。日期反算孕周与J列相差超过7天的记录有男胎144条、女胎120条，另有1条男胎记录的检测日期早于末次月经；J列保留为主孕周，F、H列仅作审计\citeup{2}。对于男胎71条“唯一比对读段数大于原始读段数”的硬冲突，以及低比对率、高过滤率和低GC记录，均不篡改原值，而生成质量标记并在敏感性分析中检验其影响。没有专门的no-call（无结果）字段时，质量风险不能直接改写为临床失败标签\citeup{4}。
 
 			\subsection{数据统一与变换}
-			为保证四个问题使用同一套变量定义，本文对时间、单位、标签和观测粒度进行统一。检测孕周按
+			为保证四个问题使用同一套变量定义，本文对时间、单位、标签和观测水平进行统一。检测孕周按
 			\[
 			t_{ij}=w_{ij}+\frac{d_{ij}}{7}
 			\]
@@ -153,7 +153,7 @@
 		
 		%正式建模	
 			\section{问题一建模}
-			\subsection{预实验}
+			\subsection{预实验与建模准备}
 			\subsubsection{预实验设计}
 			Y染色体浓度是取值于$(0,1)$的比例变量，其随孕周和BMI的变化既可能呈现阈值、饱和等非线性，也可能受测序质量、GC含量及异常读段记录的影响；同时，同一孕妇的多次检测和技术复测会引入显著的组内相关。若直接对1082条记录作普通回归，不仅可能将个体间差异误判为随孕周的纵向变化，也会高估模型的泛化能力。因此，预实验围绕``是否需要非线性结构、是否应重构目标尺度或加入质量信息、以及是否必须显式处理重复测量''三个不确定因素展开。
 
@@ -596,7 +596,7 @@
 			\end{equation}
 			四项依次对应检测资源、未获可靠结果、延迟发现和错误接受。本文不把$J_g$解释为临床不良结局概率；它是给定权重和误差情景下的无量纲决策损失。求解时先冻结通过筛选的概率模型，再把其概率曲线代入式\eqref{eq:q3_first_path}--\eqref{eq:q3_risk_objective}，逐场景枚举可行周并选取最小风险。
 
-			\subsection{模型结果}
+			\subsection{模型建立与求解结果}
 			\subsubsection{多因素升级的筛选结果}
 			表\ref{tab:q3_factor_results}给出新增因素相对问题二基线的折外结果。身高$+$体重是检测前表现最好的候选，Brier由0.115970降至0.113581，相对改善$2.06\%$，但只在3/5折胜出，没有达到预设标准。单独加入BMI改善$1.20\%$；年龄和怀孕次数分别使Brier恶化$0.92\%$和$0.84\%$。固定非线性模型相对低容量基线只改善$0.15\%$。这些结果没有支持检测前模型增加变量或容量。
 
@@ -690,6 +690,58 @@
 
 			在基准风险情景下，条件最优方案为10.5周首检、11.0周重检，直接达标比例为0.8343，累计可靠概率为0.9009。该方案的bootstrap时点IQR为3.8周，且只有$29.2\%$的预设情景达到稳定标准。因此，10.5周只表示给定可靠性、误差、重检成功率和风险权重后的条件解。对其余情景，本文保留10--22.5周的可行范围或报告不可行，不给出脱离参数条件的统一临床时点。
 
+			\section{问题四建模}
+			\subsection{建模准备}
+			\subsubsection{问题目标与文献综述}
+			问题四要求利用女胎检测记录判断是否存在染色体异常。本文以AB列非空构造任一异常标签$y_i\in\{0,1\}$，并保留T13、T18、T21及其组合信息。模型需要对一条新的检测记录给出异常概率和判定依据，而不是把同一孕妇全部记录合并成一个终身标签。数据中44名曾出现异常记录的孕妇有43名同时存在正常记录，32个同次复测组中也有5组标签不一致。这种结构说明，AB更适合作为单次筛查结果，不能在没有核型金标准的情况下解释为临床确诊\citeup{4,12}。
+
+			母体血浆cfDNA的相对染色体计数为非整倍体筛查提供了直接信号，早期研究据此识别T13、T18和T21异常\citeup{17,18}。GC偏倚会影响染色体读段统计，校正后可改善部分染色体任务的判别\citeup{14}。因此，问题四首先考察13、18、21号染色体Z值，再检验X染色体汇总量、GC和测序质量能否提供稳定增量。WISECONDOR依赖基因组窗口级读段，SeqFF需要常染色体区域计数及相应训练信息\citeup{19,20}；附件只给出汇总字段，不能复现这两类方法。本文据此把候选范围收缩为简单Z值规则、低容量逻辑回归和一个固定容量的非线性对照，并按STARD和TRIPOD的报告原则保留受试者流、阈值来源、判别与校准信息\citeup{15,16}。
+
+			\subsubsection{预实验目标与设计}
+			预实验主要解决三个会改变建模方向的问题。第一，同一孕妇有纵向检测和技术复测，若按记录随机划分，模型会在训练集和验证集中看到同一人的信息。第二，开发集中异常记录占比较低，准确率容易被全预测正常的结果掩盖。第三，题目列出的变量较多，但样本只包含147名孕妇；把全部字段直接交给复杂模型，可能得到较高的训练性能而无法泛化。
+
+			为隔离这些风险，本文以孕妇为单位将147人分为110人的开发集和37人的锁定测试集。开发集含447条记录，其中54条为异常；内部使用固定五折孕妇级分组验证，锁定测试集在预实验中不读取特征和性能。主指标采用折外预测汇总后的PR-AUC，辅助考察异常召回率、特异度、balanced accuracy、Brier分数、最差折和训练--验证差距。所有预处理、正则参数和判定阈值均在训练折内确定。
+
+			低容量候选采用带$L_2$正则的逻辑回归。令$\boldsymbol{x}_i$为第$i$条记录的标准化特征，模型表达式为
+			\begin{equation}
+			p_i=\Pr(y_i=1\mid\boldsymbol{x}_i)
+			=\operatorname{logit}^{-1}\!\left(\beta_0+\boldsymbol{\beta}^{\mathsf T}\boldsymbol{x}_i\right),
+			\label{eq:q4_pilot_logistic}
+			\end{equation}
+			并按固定顺序构造三个嵌套规格：M0仅含$Z_{13},Z_{18},Z_{21}$；M1加入$Z_X$和X染色体浓度；M2再加入总体及13、18、21号染色体GC含量。另设置全预测正常、单Z值规则和固定浅层随机森林作为对照。新增特征块的PR-AUC增益须达到0.03，并在至少4/5折同向；非线性模型还须比最佳低容量候选提高0.05，且不能越过最差折和泛化差距限制。预实验同时比较记录等权、孕妇等权和同次复测概率中位数三种口径，并检查质量尾部以及各亚型的折内事件数。
+
+			\subsubsection{预实验结果与分析}
+			开发集的折外结果见表\ref{tab:q4_pilot_results}。全预测正常和单Z值规则的PR-AUC分别为0.120805和0.130159；M0也只有0.141768。单靠13、18、21号染色体Z值不足以复现附件中的AB判定。加入X特征后，M1的PR-AUC升至0.466804；M2进一步达到0.537504，并取得0.611111的异常召回率和0.870229的特异度。GC块相对M1增加0.070700，且4/5折同向，因而M2成为预实验胜出候选。
+
+			\begin{table}[H]
+			\centering
+			\footnotesize
+			\renewcommand{\arraystretch}{1.15}
+			\caption{问题四开发集固定五折OOF预实验结果}
+			\label{tab:q4_pilot_results}
+			\begin{tabularx}{\textwidth}{@{}p{0.15\textwidth}p{0.24\textwidth}ccccX@{}}
+			\toprule
+			候选 & 输入或规则 & PR-AUC & 召回率 & 特异度 & Brier & 预实验处置 \\
+			\midrule
+			全预测正常 & 概率恒为0 & 0.120805 & 0 & 1.000000 & 0.120805 & 平凡基线 \\
+			最佳单Z规则 & $|Z_{13}|$内部学习阈值 & 0.130159 & 0.981481 & 0.061069 & -- & 判别力不足 \\
+			M0 & $Z_{13},Z_{18},Z_{21}$ & 0.141768 & 0.666667 & 0.465649 & 0.251043 & 保留为回退基线 \\
+			M1 & M0$+$X特征块 & 0.466804 & 0.685185 & 0.788804 & 0.184255 & 增益明显，稳定性待复核 \\
+			\textbf{M2} & M1$+$GC特征块 & \textbf{0.537504} & 0.611111 & 0.870229 & 0.165042 & 预实验胜出候选 \\
+			浅层随机森林 & 固定深度3、300棵树 & 0.446579 & 0.722222 & 0.809160 & 0.154986 & 不晋级 \\
+			\bottomrule
+			\end{tabularx}
+			\end{table}
+
+			尽管M2胜出,但并不等于确定采用。M1虽带来较大增益，但其训练--验证差距相对M0扩大0.078700，超过预设的0.05限制；M2仍受这一问题牵连。浅层随机森林的PR-AUC比M2低0.090925，仅1/5折优于低容量候选，平均训练--验证差距为0.347455，复杂模型路线因此被否决。三种重复测量口径的PR-AUC分别为0.537504、0.580503和0.558428，范围为0.042999，未越过0.05的路线改变线，说明按孕妇处理相关性后，低容量路线仍成立。
+
+			预实验还发现如下问题：T13和T18在每个开发折中均至少有2名阳性孕妇，可以保留为条件式次级输出；T21各折阳性孕妇数为1、2、2、2、2，暂不足以建立正式亚型模型。低比对率和高过滤比例尾部各只有2条记录且仅含单一类别，无法估计拒判收益；GC偏低样本可以继续用于敏感性分析，但不能据此制定no-call阈值。
+
+			\subsubsection{预实验结论}
+			预实验将问题四的主线确定为记录级任一异常二分类，并选出低容量逻辑回归作为正式建模方向。M2（Z$+$X$+$GC）的开发集OOF PR-AUC最高，是后续优先验证的规格；M0和M1继续作为逐级回退基线。固定浅层随机森林、全变量强制入模以及外部Z值阈值均不进入正式模型。
+
+			预实验还划定了正式求解的边界：主输出为任一异常概率，T13和T18只作条件式补充，T21及极端质量尾部只报告探索结果。下一阶段需要在开发集内完成受试者bootstrap、系数方向审计和阈值稳定性检验，再选择M0、M1或M2中的一个规格。
+
 			\section{结论}
 			%文章主结论，最后正面回应题目要求
 		
@@ -725,6 +777,13 @@
 		\item RIZOPOULOS D, TAYLOR J M G, VAN ROSMALEN J, et al. Personalized screening intervals for biomarkers using joint models for longitudinal and survival data[J]. Biostatistics, 2016, 17(1): 149--164. DOI:10.1093/biostatistics/kxv031.
 		\item AMERICAN COLLEGE OF OBSTETRICIANS AND GYNECOLOGISTS. Screening for Fetal Chromosomal Abnormalities[EB/OL]. (2026-01)[2026-08-16]. https://www.acog.org/clinical/clinical-guidance/practice-advisory/articles/2026/01/screening-for-fetal-chromosomal-abnormalities.
 		\item HOPKINS M K, KOELPER N, CALDWELL S, et al. Obesity and no call results: optimal timing of cell-free DNA testing and redraw[J]. American Journal of Obstetrics and Gynecology, 2021, 225(4): 417.e1--417.e10. DOI:10.1016/j.ajog.2021.04.212.
+		\item CHEN E Z, CHIU R W K, SUN H, et al. Noninvasive prenatal diagnosis of fetal trisomy 18 and trisomy 13 by maternal plasma DNA sequencing[J]. PLoS ONE, 2011, 6(7): e21791. DOI:10.1371/journal.pone.0021791.
+		\item BOSSUYT P M, REITSMA J B, BRUNS D E, et al. STARD 2015: an updated list of essential items for reporting diagnostic accuracy studies[J]. BMJ, 2015, 351: h5527. DOI:10.1136/bmj.h5527.
+		\item COLLINS G S, REITSMA J B, ALTMAN D G, et al. Transparent reporting of a multivariable prediction model for individual prognosis or diagnosis (TRIPOD): the TRIPOD statement[J]. BMJ, 2015, 350: g7594. DOI:10.1136/bmj.g7594.
+		\item FAN H C, BLUMENFELD Y J, CHITKARA U, et al. Noninvasive diagnosis of fetal aneuploidy by shotgun sequencing DNA from maternal blood[J]. Proceedings of the National Academy of Sciences of the United States of America, 2008, 105(42): 16266--16271. DOI:10.1073/pnas.0808319105.
+		\item PALOMAKI G E, DECIU C, KLOZA E M, et al. DNA sequencing of maternal plasma reliably identifies trisomy 18 and trisomy 13 as well as Down syndrome: an international collaborative study[J]. Genetics in Medicine, 2012, 14(3): 296--305. DOI:10.1038/gim.2011.73.
+		\item STRAVER R, SISTERMANS E A, HOLSTEGE H, et al. WISECONDOR: detection of fetal aberrations from shallow sequencing maternal plasma based on a within-sample comparison scheme[J]. Nucleic Acids Research, 2014, 42(5): e31. DOI:10.1093/nar/gkt992.
+		\item KIM S K, HANNUM G, GEIS J, et al. Determination of fetal DNA fraction from the plasma of pregnant women using sequence read counts[J]. Prenatal Diagnosis, 2015, 35(8): 810--815. DOI:10.1002/pd.4615.
 	\end{enumerate}
 	\end{spacing}
 	
